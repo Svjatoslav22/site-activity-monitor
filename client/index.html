@@ -1,0 +1,667 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Site Active Monitor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f9fafb;
+      }
+
+      /* Custom scrollbar for minimalist look */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
+      ::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      ::-webkit-scrollbar-thumb {
+        background: #d1d5db;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-thumb:hover {
+        background: #9ca3af;
+      }
+
+      .history-bar {
+        transition: all 0.2s ease;
+      }
+      .history-bar:hover {
+        opacity: 0.7;
+        transform: scaleY(1.2);
+      }
+    </style>
+  </head>
+  <body class="text-gray-800 antialiased min-h-screen flex flex-col">
+    <nav class="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between h-16">
+          <div class="flex items-center">
+            <i class="ph ph-activity text-blue-600 text-2xl mr-2"></i>
+            <span class="font-semibold text-lg tracking-tight text-gray-900"
+              >SiteMonitor</span
+            >
+          </div>
+          <div class="flex items-center gap-4">
+            <!-- Telegram Icon Link -->
+            <a
+              href="https://t.me/pocketnote2vbot"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="text-gray-500 hover:text-blue-500 transition group flex items-center gap-1.5"
+              title="Перейти до Telegram Бота"
+            >
+              <i
+                class="ph ph-telegram-logo text-2xl group-hover:scale-110 transition-transform"
+              ></i>
+              <span class="hidden sm:inline text-sm font-medium">TG Бот</span>
+            </a>
+
+            <div class="h-4 w-px bg-gray-200"></div>
+            <!-- Розділювач -->
+
+            <button
+              class="text-gray-500 hover:text-gray-700 transition"
+              title="Сповіщення"
+            >
+              <i class="ph ph-bell text-xl"></i>
+            </button>
+            <div
+              class="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm shadow-sm cursor-pointer"
+              title="Профіль"
+            >
+              А
+            </div>
+          </div>
+        </div>
+      </div>
+    </nav>
+
+    <main class="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <!-- ... existing code ... -->
+
+      <!-- ... existing code ... -->
+      <div
+        class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4"
+      >
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900">Моніторинг сайтів</h1>
+          <p class="text-gray-500 text-sm mt-1">
+            Відстежуйте доступність ваших ресурсів у реальному часі
+          </p>
+        </div>
+        <!-- Оновлена кнопка "Додати сайт" -->
+        <button
+          onclick="openAddModal()"
+          class="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2"
+        >
+          <i class="ph ph-plus-circle text-lg"></i>
+          Додати сайт
+        </button>
+      </div>
+      <!-- ... existing code ... -->
+      <!-- Контейнер для карток сайтів -->
+      <div id="sites-grid" class="flex flex-col gap-4">
+        <!-- Картки генеруватимуться тут за допомогою JavaScript -->
+      </div>
+    </main>
+
+    <!-- Модальне вікно: Додати сайт -->
+    <div
+      id="add-modal"
+      class="fixed inset-0 bg-gray-900/50 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all"
+      >
+        <div
+          class="px-6 py-4 border-b border-gray-100 flex justify-between items-center"
+        >
+          <h3 class="text-lg font-semibold text-gray-900">Додати новий сайт</h3>
+          <button
+            onclick="closeAddModal()"
+            class="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <i class="ph ph-x text-xl"></i>
+          </button>
+        </div>
+        <form id="add-site-form" onsubmit="handleAddSubmit(event)" class="p-6">
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >Назва сайту</label
+            >
+            <input
+              type="text"
+              id="site-name"
+              required
+              placeholder="Наприклад: Мій Блог"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition text-sm"
+            />
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1"
+              >URL адреса</label
+            >
+            <input
+              type="url"
+              id="site-url"
+              required
+              placeholder="https://example.com"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition text-sm"
+            />
+          </div>
+          <div class="flex justify-end gap-3">
+            <button
+              type="button"
+              onclick="closeAddModal()"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+            >
+              Скасувати
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-2"
+            >
+              <i class="ph ph-floppy-disk"></i> Зберегти
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Модальне вікно: Видалити сайт -->
+    <div
+      id="delete-modal"
+      class="fixed inset-0 bg-gray-900/50 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 text-center transform transition-all"
+      >
+        <div
+          class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4"
+        >
+          <i class="ph ph-trash text-2xl text-red-600"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-gray-900 mb-2">Видалити сайт?</h3>
+        <p class="text-sm text-gray-500 mb-6">
+          Ви дійсно хочете видалити
+          <span id="delete-site-name" class="font-medium text-gray-900"></span>?
+          Цю дію неможливо скасувати.
+        </p>
+        <div class="flex justify-center gap-3">
+          <button
+            onclick="closeDeleteModal()"
+            class="px-4 py-2 w-full text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+          >
+            Скасувати
+          </button>
+          <button
+            onclick="confirmDelete()"
+            class="px-4 py-2 w-full text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition shadow-sm"
+          >
+            Видалити
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <footer class="border-t border-gray-200 bg-white mt-auto">
+      <div
+        class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col sm:flex-row justify-between items-center gap-4"
+      >
+        <p class="text-sm text-gray-500">
+          © 2026 SiteMonitor. Всі права захищено.
+        </p>
+        <div class="flex items-center text-sm text-gray-500 gap-1">
+          <div class="h-2 w-2 rounded-full bg-green-500 animate-pulse"></div>
+          Система моніторингу працює
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      let currentFilter = 'all';
+      let searchQuery = '';
+      let sitesData = [];
+      let siteToDeleteId = null;
+
+      // --- DOM Elements ---
+      let grid, searchInput, countAll, countActive, countInactive;
+      let btnAll, btnActive, btnInactive;
+      let overallStatusDiv,
+        overallIconContainer,
+        overallIcon,
+        overallTitle,
+        overallDesc;
+      let addModal, deleteModal, addForm;
+
+      // --- Functions ---
+
+      async function fetchSitesData() {
+        try {
+          const response = await fetch('/api/monitors');
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const monitorsData = await response.json();
+
+          const enrichedSitesData = await Promise.all(
+            monitorsData.map(async (item) => {
+              let stats = {};
+              try {
+                const statsResponse = await fetch(
+                  `/api/monitors/${item._id || item.id}/stats`,
+                );
+                if (statsResponse.ok) stats = await statsResponse.json();
+              } catch (e) {
+                console.warn(`Could not fetch stats for ${item.name}`);
+              }
+
+              let history = Array(40).fill(1);
+              try {
+                const historyResponse = await fetch(
+                  `/api/monitors/${item._id || item.id}/history`,
+                );
+                if (historyResponse.ok) {
+                  const rawHistory = await historyResponse.json();
+                  if (Array.isArray(rawHistory)) {
+                    history = rawHistory
+                      .slice(-40)
+                      .map((check) =>
+                        check.status === 'up' ||
+                        check.statusCode === 200 ||
+                        check.status === 'active'
+                          ? 1
+                          : 0,
+                      );
+                    while (history.length < 40) history.unshift(1);
+                  }
+                }
+              } catch (e) {
+                console.warn(`Could not fetch history for ${item.name}`);
+              }
+
+              const lastCheckedDate = stats.lastCheck
+                ? new Date(stats.lastCheck)
+                : new Date();
+              const formattedTime = lastCheckedDate.toLocaleTimeString(
+                'uk-UA',
+                { hour: '2-digit', minute: '2-digit' },
+              );
+
+              return {
+                id: item._id || item.id,
+                name: item.name || 'Сайт',
+                url: item.url || item.urlToCheck || 'N/A',
+                status: item.isActive !== false ? 'active' : 'inactive',
+                uptime: stats.uptimePercentage
+                  ? stats.uptimePercentage.toFixed(2)
+                  : 100,
+                lastChecked: formattedTime,
+                ping: stats.averageResponseTime
+                  ? `${Math.round(stats.averageResponseTime)} мс`
+                  : 'N/A',
+                history: history,
+              };
+            }),
+          );
+
+          sitesData = enrichedSitesData;
+
+          updateStats();
+          updateOverallStatus();
+          renderSites();
+        } catch (error) {
+          console.error('Помилка завантаження даних з бекенду:', error);
+          if (grid) {
+            grid.innerHTML = `
+                        <div class="text-center py-12 bg-red-50 rounded-xl border border-red-200">
+                            <i class="ph ph-warning-octagon text-4xl text-red-500 mb-2"></i>
+                            <h3 class="text-red-900 font-medium">Помилка з'єднання з сервером</h3>
+                            <p class="text-red-600 text-sm mt-1">Не вдалося завантажити статус сайтів.</p>
+                            <p class="text-xs text-red-400 mt-2 font-mono">${error.message}</p>
+                        </div>
+                    `;
+          }
+        }
+      }
+
+      function init() {
+        // Шукаємо елементи ТІЛЬКИ після завантаження сторінки
+        grid = document.getElementById('sites-grid');
+        searchInput = document.getElementById('search-input');
+
+        countAll = document.getElementById('count-all');
+        countActive = document.getElementById('count-active');
+        countInactive = document.getElementById('count-inactive');
+
+        btnAll = document.getElementById('btn-filter-all');
+        btnActive = document.getElementById('btn-filter-active');
+        btnInactive = document.getElementById('btn-filter-inactive');
+
+        overallStatusDiv = document.getElementById('overall-status');
+        overallIconContainer = document.getElementById(
+          'overall-icon-container',
+        );
+        overallIcon = document.getElementById('overall-icon');
+        overallTitle = document.getElementById('overall-title');
+        overallDesc = document.getElementById('overall-desc');
+
+        addModal = document.getElementById('add-modal');
+        deleteModal = document.getElementById('delete-modal');
+        addForm = document.getElementById('add-site-form');
+
+        if (grid) {
+          grid.innerHTML =
+            '<div class="text-center py-12"><i class="ph ph-spinner animate-spin text-4xl text-blue-500"></i><p class="mt-3 text-gray-500 font-medium">Завантаження з бази...</p></div>';
+        }
+
+        fetchSitesData();
+        setInterval(fetchSitesData, 30000);
+
+        if (searchInput) {
+          searchInput.addEventListener('input', (e) => {
+            searchQuery = e.target.value.toLowerCase();
+            renderSites();
+          });
+        }
+      }
+
+      function setFilter(filterType) {
+        currentFilter = filterType;
+
+        [btnAll, btnActive, btnInactive].forEach((btn) => {
+          if (btn) {
+            btn.classList.remove('bg-white', 'shadow-sm', 'text-gray-900');
+            btn.classList.add('text-gray-600');
+          }
+        });
+
+        let activeBtn;
+        if (filterType === 'all') activeBtn = btnAll;
+        else if (filterType === 'active') activeBtn = btnActive;
+        else activeBtn = btnInactive;
+
+        if (activeBtn) {
+          activeBtn.classList.remove('text-gray-600');
+          activeBtn.classList.add('bg-white', 'shadow-sm', 'text-gray-900');
+        }
+
+        renderSites();
+      }
+
+      function updateStats() {
+        if (!countAll || !countActive || !countInactive) return;
+
+        const total = sitesData.length;
+        const active = sitesData.filter((s) => s.status === 'active').length;
+        const inactive = total - active;
+
+        countAll.textContent = total;
+        countActive.textContent = active;
+        countInactive.textContent = inactive;
+      }
+
+      function updateOverallStatus() {
+        if (
+          !overallIconContainer ||
+          !overallIcon ||
+          !overallTitle ||
+          !overallDesc ||
+          !overallStatusDiv
+        )
+          return;
+
+        const inactiveCount = sitesData.filter(
+          (s) => s.status === 'inactive',
+        ).length;
+
+        if (inactiveCount === 0) {
+          overallIconContainer.className =
+            'h-12 w-12 rounded-full flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-600';
+          overallIcon.className = 'ph-fill ph-check-circle text-2xl';
+          overallTitle.textContent = 'Всі системи працюють у штатному режимі';
+          overallDesc.textContent =
+            'Немає зафіксованих збоїв чи проблем з продуктивністю.';
+          overallStatusDiv.className =
+            'bg-white rounded-xl p-5 mb-8 border border-gray-200 shadow-sm flex items-center gap-4 transition-all duration-300';
+        } else {
+          overallIconContainer.className =
+            'h-12 w-12 rounded-full flex items-center justify-center shrink-0 bg-red-100 text-red-600';
+          overallIcon.className =
+            'ph-fill ph-warning-circle text-2xl animate-pulse';
+          overallTitle.textContent = `Виявлено проблеми: ${inactiveCount} сайт(ів) не відповідає`;
+          overallDesc.textContent =
+            'Деякі з ваших ресурсів наразі недоступні. Перевірте список нижче.';
+          overallStatusDiv.className =
+            'bg-red-50 rounded-xl p-5 mb-8 border border-red-200 shadow-sm flex items-center gap-4 transition-all duration-300';
+        }
+      }
+
+      function generateHistoryHtml(historyBars) {
+        let html = '';
+        historyBars.forEach((status) => {
+          const colorClass = status === 1 ? 'bg-emerald-400' : 'bg-red-500';
+          const statusText = status === 1 ? 'Доступний' : 'Недоступний';
+          html += `<div class="w-1.5 sm:w-2 h-6 sm:h-8 rounded-sm ${colorClass} history-bar cursor-pointer" title="${statusText}"></div>`;
+        });
+        return html;
+      }
+
+      function renderSites() {
+        if (!grid) return;
+        grid.innerHTML = '';
+
+        const filteredSites = sitesData.filter((site) => {
+          const matchesFilter =
+            currentFilter === 'all' || site.status === currentFilter;
+          const matchesSearch =
+            site.name.toLowerCase().includes(searchQuery) ||
+            site.url.toLowerCase().includes(searchQuery);
+          return matchesFilter && matchesSearch;
+        });
+
+        if (filteredSites.length === 0) {
+          grid.innerHTML = `
+                    <div class="text-center py-12 bg-white rounded-xl border border-gray-200">
+                        <i class="ph ph-magnifying-glass text-4xl text-gray-300 mb-2"></i>
+                        <h3 class="text-gray-900 font-medium">Нічого не знайдено</h3>
+                        <p class="text-gray-500 text-sm mt-1">Спробуйте змінити критерії пошуку або фільтри.</p>
+                    </div>
+                `;
+          return;
+        }
+
+        filteredSites.forEach((site) => {
+          const isActive = site.status === 'active';
+          const statusBadgeBg = isActive
+            ? 'bg-emerald-50 border-emerald-200'
+            : 'bg-red-50 border-red-200';
+          const statusBadgeText = isActive
+            ? 'text-emerald-700'
+            : 'text-red-700';
+          const statusDot = isActive ? 'bg-emerald-500' : 'bg-red-500';
+          const statusLabel = isActive ? 'Активний' : 'Неактивний';
+
+          const cardHtml = `
+                    <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200 flex flex-col group">
+                        
+                        <!-- Шапка картки -->
+                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+                            <div class="flex items-center gap-3 w-full sm:w-auto">
+                                <div class="h-10 w-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
+                                    <i class="ph ph-globe text-gray-500 text-xl group-hover:text-blue-500 transition-colors"></i>
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    <h3 class="font-semibold text-gray-900 text-base flex items-center gap-2 truncate">
+                                        ${site.name}
+                                        <div class="flex items-center gap-1 ml-2">
+                                            <a href="${site.url}" target="_blank" class="text-gray-400 hover:text-blue-500 transition-colors" title="Відкрити сайт">
+                                                <i class="ph ph-arrow-square-out"></i>
+                                            </a>
+                                            <!-- Кнопка Видалити -->
+                                            <button onclick="openDeleteModal('${site.id}', '${site.name.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-red-500 transition-colors ml-1" title="Видалити">
+                                                <i class="ph ph-trash"></i>
+                                            </button>
+                                        </div>
+                                    </h3>
+                                    <p class="text-sm text-gray-500 font-mono mt-0.5 truncate">${site.url}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end shrink-0">
+                                <div class="text-right hidden sm:block">
+                                    <div class="text-sm font-medium text-gray-900">${site.uptime}%</div>
+                                    <div class="text-xs text-gray-500">Аптайм</div>
+                                </div>
+                                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusBadgeBg} ${statusBadgeText}">
+                                    <span class="h-1.5 w-1.5 rounded-full ${statusDot} ${!isActive ? 'animate-pulse' : ''}"></span>
+                                    ${statusLabel}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Історія -->
+                        <div class="mb-4">
+                            <div class="flex justify-between items-end text-xs text-gray-400 mb-1.5 px-1">
+                                <span>30 днів тому</span>
+                                <span>Сьогодні</span>
+                            </div>
+                            <div class="flex items-center justify-between gap-0.5 w-full">
+                                ${generateHistoryHtml(site.history)}
+                            </div>
+                        </div>
+
+                        <!-- Підвал картки -->
+                        <div class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
+                            <div class="flex items-center gap-4">
+                                <span class="flex items-center gap-1">
+                                    <i class="ph ph-clock text-gray-400"></i>
+                                    Перевірено: ${site.lastChecked}
+                                </span>
+                                <span class="flex items-center gap-1">
+                                    <i class="ph ph-activity text-gray-400"></i>
+                                    Пінг: ${site.ping}
+                                </span>
+                            </div>
+                            
+                            <button class="text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer text-sm">
+                                Деталі
+                            </button>
+                        </div>
+                    </div>
+                `;
+          grid.innerHTML += cardHtml;
+        });
+      }
+
+      // --- Управління модальними вікнами ---
+
+      function openAddModal() {
+        if (addForm) addForm.reset();
+        if (addModal) {
+          addModal.classList.remove('hidden');
+          addModal.classList.add('flex');
+        }
+      }
+
+      function closeAddModal() {
+        if (addModal) {
+          addModal.classList.add('hidden');
+          addModal.classList.remove('flex');
+        }
+      }
+
+      async function handleAddSubmit(event) {
+        event.preventDefault();
+        const name = document.getElementById('site-name').value;
+        const url = document.getElementById('site-url').value;
+
+        const submitBtn = addForm.querySelector('button[type="submit"]');
+        const originalContent = submitBtn.innerHTML;
+        submitBtn.innerHTML =
+          '<i class="ph ph-spinner animate-spin"></i> Збереження...';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch('/api/monitors', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              name,
+              urlToCheck: url,
+              url: url,
+              interval: 60,
+            }),
+          });
+
+          if (!response.ok) throw new Error('Помилка при створенні');
+
+          closeAddModal();
+          if (grid)
+            grid.innerHTML =
+              '<div class="text-center py-8 text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>';
+          await fetchSitesData();
+        } catch (error) {
+          console.error('Помилка додавання:', error);
+        } finally {
+          submitBtn.innerHTML = originalContent;
+          submitBtn.disabled = false;
+        }
+      }
+
+      function openDeleteModal(id, name) {
+        siteToDeleteId = id;
+        document.getElementById('delete-site-name').textContent = name;
+        if (deleteModal) {
+          deleteModal.classList.remove('hidden');
+          deleteModal.classList.add('flex');
+        }
+      }
+
+      function closeDeleteModal() {
+        siteToDeleteId = null;
+        if (deleteModal) {
+          deleteModal.classList.add('hidden');
+          deleteModal.classList.remove('flex');
+        }
+      }
+
+      async function confirmDelete() {
+        if (!siteToDeleteId) return;
+
+        try {
+          const response = await fetch(`/api/monitors/${siteToDeleteId}`, {
+            method: 'DELETE',
+          });
+
+          if (!response.ok) throw new Error('Помилка при видаленні');
+
+          closeDeleteModal();
+          sitesData = sitesData.filter((s) => s.id !== siteToDeleteId);
+          updateStats();
+          updateOverallStatus();
+          renderSites();
+        } catch (error) {
+          console.error('Помилка видалення:', error);
+          closeDeleteModal();
+        }
+      }
+
+      // Запуск ТІЛЬКИ після повного завантаження HTML
+      document.addEventListener('DOMContentLoaded', init);
+    </script>
+  </body>
+</html>
