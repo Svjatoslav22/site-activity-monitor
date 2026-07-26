@@ -3,13 +3,15 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { SchedulerService } from './scheduler.service';
 import { ChecksModule } from '../checks/checks.module';
 import { Monitor, MonitorSchema } from '../monitors/schemas/monitor.schema';
-import { TelegramService } from '../telegram/telegram.service';
+import { TelegramModule } from '../telegram/telegram.module';
 
 @Module({
   imports: [
-    ChecksModule, // Імпортуємо модуль перевірок
+    ChecksModule,
+    TelegramModule,
     MongooseModule.forFeature([{ name: Monitor.name, schema: MonitorSchema }]),
   ],
-  providers: [SchedulerService, TelegramService],
+  providers: [SchedulerService],
+  exports: [SchedulerService],
 })
 export class SchedulerModule {}

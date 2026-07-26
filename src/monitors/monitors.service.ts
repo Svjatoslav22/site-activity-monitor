@@ -1,44 +1,70 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Inject, forwardRef } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Monitor, MonitorDocument } from './schemas/monitor.schema';
 import { CreateMonitorDto } from './dto/create-monitor.dto';
 import { UpdateMonitorDto } from './dto/update-monitor.dto';
+import { SchedulerService } from '../scheduler/scheduler.service';
 
 @Injectable()
 export class MonitorsService {
-  // За допомогою Dependency Injection "просимо" NestJS дати нам доступ до моделі Monitor
   constructor(
     @InjectModel(Monitor.name) private monitorModel: Model<MonitorDocument>,
+    @Inject(forwardRef(() => SchedulerService))
+    private schedulerService: SchedulerService,
   ) {}
 
-  // Метод для додавання нового сайту в базу
   async create(dto: CreateMonitorDto) {
-    return this.monitorModel.create(dto);
+    const monitor = await this.monitorModel.create(dto);
+    // Одразу запускаємо моніторинг для нового сайту
+    this.schedulerService.startMonitor(monitor);
+    return monitor;
   }
 
-  // Метод для отримання списку всіх сайтів
   async findAll() {
     return this.monitorModel.find();
   }
 
-  // Отримання одного сайту за ID
   async findOne(id: string) {
     return this.monitorModel.findById(id);
   }
 
-  // Оновлення сайту (наприклад, змінити інтервал перевірки)
   async update(id: string, dto: UpdateMonitorDto) {
-    return this.monitorModel.findByIdAndUpdate(id, dto, { new: true });
+    const updated = await this.monitorModel.findByIdAndUpdate(id, dto, {
+      new: true,
+    });
+
+    if (updated) {
+      // Перезапускаємо таймер, щоб застосувати новий інтервал/URL
+      this.schedulerService.stopMonitor(id);
+      if (updated.isActive) {
+        this.schedulerService.startMonitor(updated);
+      }
+    }
+
+    return updated;
   }
 
-  // Видалення сайту
   async remove(id: string) {
+    this.schedulerService.stopMonitor(id);
     await this.monitorModel.findByIdAndDelete(id);
   }
 
-  // Зміна статусу (пауза або відновлення моніторингу)
   async setActive(id: string, isActive: boolean) {
-    return this.monitorModel.findByIdAndUpdate(id, { isActive }, { new: true });
+    const updated = await this.monitorModel.findByIdAndUpdate(
+      id,
+      { isActive },
+      { new: true },
+    );
+
+    if (updated) {
+      if (isActive) {
+        this.schedulerService.startMonitor(updated);
+      } else {
+        this.schedulerService.stopMonitor(id);
+      }
+    }
+
+    return updated;
   }
 }

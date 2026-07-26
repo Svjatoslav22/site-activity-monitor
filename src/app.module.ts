@@ -15,7 +15,7 @@ import { ScheduleModule } from '@nestjs/schedule';
   imports: [
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'client'), // Вказуємо на папку public
-      exclude: ['/monitors(.*)'], // Важливо: API-запити не повинні перехоплюватися статикою
+      exclude: ['/api/monitors/*path'],
     }),
     ConfigModule.forRoot({
       isGlobal: true, // 👈 Робимо модуль доступним глобально

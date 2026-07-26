@@ -52,7 +52,7 @@
               >SiteMonitor</span
             >
           </div>
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 sm:gap-4 shrink-0">
             <!-- Telegram Icon Link -->
             <a
               href="https://t.me/pocketnote2vbot"
@@ -135,7 +135,7 @@
             <i class="ph ph-x text-xl"></i>
           </button>
         </div>
-        <form id="add-site-form" onsubmit="handleAddSubmit(event)" class="p-6">
+        <form id="add-site-form" onsubmit="handleAddSubmit(event)" class="p-4 sm:p-6">
           <div class="mb-4">
             <label class="block text-sm font-medium text-gray-700 mb-1"
               >Назва сайту</label
@@ -171,6 +171,75 @@
             <button
               type="submit"
               class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-sm flex items-center gap-2"
+            >
+              <i class="ph ph-floppy-disk"></i> Зберегти
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Модальне вікно: Редагувати монітор -->
+    <div
+      id="edit-modal"
+      class="fixed inset-0 bg-gray-900/50 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity"
+    >
+      <div
+        class="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-hidden transform transition-all"
+      >
+        <div
+          class="px-4 sm:px-6 py-4 border-b border-gray-100 flex justify-between items-center"
+        >
+          <h3 class="text-lg font-semibold text-gray-900">Редагувати монітор</h3>
+          <button
+            onclick="closeEditModal()"
+            class="text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            <i class="ph ph-x text-xl"></i>
+          </button>
+        </div>
+        <form id="edit-site-form" onsubmit="handleEditSubmit(event)" class="p-4 sm:p-6">
+          <input type="hidden" id="edit-site-id" />
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Назва сайту</label>
+            <input
+              type="text"
+              id="edit-site-name"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium text-gray-700 mb-1">URL адреса</label>
+            <input
+              type="url"
+              id="edit-site-url"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
+            />
+          </div>
+          <div class="mb-6">
+            <label class="block text-sm font-medium text-gray-700 mb-1">Інтервал перевірки (хв)</label>
+            <input
+              type="number"
+              id="edit-site-interval"
+              min="1"
+              required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm"
+            />
+            <p class="text-xs text-gray-400 mt-1">Як часто перевіряти сайт (у хвилинах)</p>
+          </div>
+          <div class="flex justify-end gap-3">
+            <button
+              type="button"
+              onclick="closeEditModal()"
+              class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+            >
+              Скасувати
+            </button>
+            <button
+              type="submit"
+              class="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 shadow-sm flex items-center gap-2"
             >
               <i class="ph ph-floppy-disk"></i> Зберегти
             </button>
@@ -243,7 +312,7 @@
         overallIcon,
         overallTitle,
         overallDesc;
-      let addModal, deleteModal, addForm;
+      let addModal, deleteModal, editModal, addForm, editForm;
 
       // --- Functions ---
 
@@ -305,7 +374,8 @@
                 id: item._id || item.id,
                 name: item.name || 'Сайт',
                 url: item.url || item.urlToCheck || 'N/A',
-                status: item.isActive !== false ? 'active' : 'inactive',
+                interval: item.interval || 5,
+                status: item.lastStatus === 'up' ? 'active' : 'inactive',
                 uptime: stats.uptimePercentage
                   ? stats.uptimePercentage.toFixed(2)
                   : 100,
@@ -361,7 +431,9 @@
 
         addModal = document.getElementById('add-modal');
         deleteModal = document.getElementById('delete-modal');
+        editModal = document.getElementById('edit-modal');
         addForm = document.getElementById('add-site-form');
+        editForm = document.getElementById('edit-site-form');
 
         if (grid) {
           grid.innerHTML =
@@ -451,11 +523,13 @@
       }
 
       function generateHistoryHtml(historyBars) {
+        const isMobile = window.innerWidth < 640;
+        const bars = isMobile ? historyBars.slice(-20) : historyBars;
         let html = '';
-        historyBars.forEach((status) => {
+        bars.forEach((status) => {
           const colorClass = status === 1 ? 'bg-emerald-400' : 'bg-red-500';
           const statusText = status === 1 ? 'Доступний' : 'Недоступний';
-          html += `<div class="w-1.5 sm:w-2 h-6 sm:h-8 rounded-sm ${colorClass} history-bar cursor-pointer" title="${statusText}"></div>`;
+          html += `<div class="w-2 sm:w-2 h-6 sm:h-8 rounded-sm ${colorClass} history-bar cursor-pointer shrink-0" title="${statusText}"></div>`;
         });
         return html;
       }
@@ -505,14 +579,16 @@
                                     <i class="ph ph-globe text-gray-500 text-xl group-hover:text-blue-500 transition-colors"></i>
                                 </div>
                                 <div class="flex-1 min-w-0">
-                                    <h3 class="font-semibold text-gray-900 text-base flex items-center gap-2 truncate">
-                                        ${site.name}
-                                        <div class="flex items-center gap-1 ml-2">
+                                    <h3 class="font-semibold text-gray-900 text-base flex items-center gap-2">
+                                        <span class="truncate">${site.name}</span>
+                                        <div class="flex items-center gap-1 ml-2 shrink-0">
                                             <a href="${site.url}" target="_blank" class="text-gray-400 hover:text-blue-500 transition-colors" title="Відкрити сайт">
                                                 <i class="ph ph-arrow-square-out"></i>
                                             </a>
-                                            <!-- Кнопка Видалити -->
-                                            <button onclick="openDeleteModal('${site.id}', '${site.name.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-red-500 transition-colors ml-1" title="Видалити">
+                                            <button onclick="openEditModal('${site.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Редагувати">
+                                                <i class="ph ph-pencil-simple"></i>
+                                            </button>
+                                            <button onclick="openDeleteModal('${site.id}', '${site.name.replace(/'/g, "\\'")}')" class="text-gray-400 hover:text-red-500 transition-colors" title="Видалити">
                                                 <i class="ph ph-trash"></i>
                                             </button>
                                         </div>
@@ -539,14 +615,14 @@
                                 <span>30 днів тому</span>
                                 <span>Сьогодні</span>
                             </div>
-                            <div class="flex items-center justify-between gap-0.5 w-full">
+                            <div class="flex items-center overflow-x-auto gap-0.5 w-full pb-1 sm:pb-0 sm:justify-between">
                                 ${generateHistoryHtml(site.history)}
                             </div>
                         </div>
 
                         <!-- Підвал картки -->
-                        <div class="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-500">
-                            <div class="flex items-center gap-4">
+                        <div class="mt-auto pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-gray-500">
+                            <div class="flex flex-wrap items-center gap-x-4 gap-y-1">
                                 <span class="flex items-center gap-1">
                                     <i class="ph ph-clock text-gray-400"></i>
                                     Перевірено: ${site.lastChecked}
@@ -636,6 +712,67 @@
         if (deleteModal) {
           deleteModal.classList.add('hidden');
           deleteModal.classList.remove('flex');
+        }
+      }
+
+      function openEditModal(id) {
+        const site = sitesData.find((s) => s.id === id);
+        if (!site) return;
+
+        document.getElementById('edit-site-id').value = site.id;
+        document.getElementById('edit-site-name').value = site.name;
+        document.getElementById('edit-site-url').value = site.url;
+        document.getElementById('edit-site-interval').value = site.interval;
+
+        if (editModal) {
+          editModal.classList.remove('hidden');
+          editModal.classList.add('flex');
+        }
+      }
+
+      function closeEditModal() {
+        if (editForm) editForm.reset();
+        if (editModal) {
+          editModal.classList.add('hidden');
+          editModal.classList.remove('flex');
+        }
+      }
+
+      async function handleEditSubmit(event) {
+        event.preventDefault();
+        const id = document.getElementById('edit-site-id').value;
+        const name = document.getElementById('edit-site-name').value;
+        const url = document.getElementById('edit-site-url').value;
+        const interval = parseInt(
+          document.getElementById('edit-site-interval').value,
+          10,
+        );
+
+        const submitBtn = editForm.querySelector('button[type="submit"]');
+        const originalContent = submitBtn.innerHTML;
+        submitBtn.innerHTML =
+          '<i class="ph ph-spinner animate-spin"></i> Збереження...';
+        submitBtn.disabled = true;
+
+        try {
+          const response = await fetch(`/api/monitors/${id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name, url, interval }),
+          });
+
+          if (!response.ok) throw new Error('Помилка при оновленні');
+
+          closeEditModal();
+          if (grid)
+            grid.innerHTML =
+              '<div class="text-center py-8 text-gray-500"><i class="ph ph-spinner animate-spin text-3xl"></i></div>';
+          await fetchSitesData();
+        } catch (error) {
+          console.error('Помилка редагування:', error);
+        } finally {
+          submitBtn.innerHTML = originalContent;
+          submitBtn.disabled = false;
         }
       }
 
