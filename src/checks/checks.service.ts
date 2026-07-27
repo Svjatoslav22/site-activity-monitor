@@ -95,7 +95,9 @@ export class ChecksService {
       avgResult[0]?.avg ?? latestCheck?.responseTime ?? null;
     const latestPing = latestCheck?.responseTime ?? null;
     const lastCheck =
-      monitor?.lastCheckedAt ?? latestCheck?.createdAt ?? null;
+      monitor?.lastCheckedAt ??
+      (latestCheck as { createdAt?: Date } | null)?.createdAt ??
+      null;
 
     return {
       uptimePercentage,
