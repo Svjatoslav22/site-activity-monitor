@@ -84,26 +84,74 @@ export class TelegramService {
     }
   }
 
-  async sendAlert(monitorName: string, url: string, error: string) {
-    const message =
-      `🚨 <b>Увага! Сайт впав!</b>\n\n` +
-      `<b>Сайт:</b> ${monitorName}\n` +
-      `<b>URL:</b> ${url}\n` +
-      `<b>Помилка:</b> ${error}`;
+  async sendAlert(
+    monitorName: string,
+    url: string,
+    error: string,
+    responseTime?: number,
+  ) {
+    const time = new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' });
+    const pingLine =
+      responseTime != null ? `\n<b>Останній пінг:</b> ${responseTime} мс` : '';
 
-    await this.sendMessage(message, `надіслано алерт про падіння для ${monitorName}`);
+    const message =
+      `🚨 <b>Сайт недоступний</b>\n` +
+      `━━━━━━━━━━━━━━━━\n` +
+      `<b>📌 Назва:</b> ${this.escapeHtml(monitorName)}\n` +
+      `<b>🔗 URL:</b> ${this.escapeHtml(url)}\n` +
+      `<b>❌ Помилка:</b> ${this.escapeHtml(error)}${pingLine}\n` +
+      `<b>🕐 Час:</b> ${time}\n\n` +
+      `<i>Перевірте сервер або налаштування DNS.</i>`;
+
+    await this.sendMessage(message, `алерт про падіння: ${monitorName}`);
   }
 
   async sendRecovery(monitorName: string, url: string, responseTime: number) {
-    const message =
-      `✅ <b>Сайт відновив роботу!</b>\n\n` +
-      `<b>Сайт:</b> ${monitorName}\n` +
-      `<b>URL:</b> ${url}\n` +
-      `<b>Час відгуку:</b> ${responseTime}мс`;
+    const time = new Date().toLocaleString('uk-UA', { timeZone: 'Europe/Kyiv' });
 
-    await this.sendMessage(
-      message,
-      `надіслано сповіщення про відновлення для ${monitorName}`,
-    );
+    const message =
+      `✅ <b>Сайт знову працює</b>\n` +
+      `━━━━━━━━━━━━━━━━\n` +
+      `<b>📌 Назва:</b> ${this.escapeHtml(monitorName)}\n` +
+      `<b>🔗 URL:</b> ${this.escapeHtml(url)}\n` +
+      `<b>⚡ Пінг:</b> ${responseTime} мс\n` +
+      `<b>🕐 Час:</b> ${time}`;
+
+    await this.sendMessage(message, `відновлення: ${monitorName}`);
+  }
+
+  getStatus() {
+    const botUsername =
+      this.configService.get<string>('TELEGRAM_BOT_USERNAME') ??
+      'pocketnote2vbot';
+
+    return {
+      configured: !!(this.bot && this.chatId !== null),
+      chatId: this.chatId,
+      botUsername,
+      botUrl: `https://t.me/${botUsername.replace('@', '')}`,
+    };
+  }
+
+  async sendTestMessage() {
+    if (!this.bot || this.chatId === null) {
+      return { ok: false, message: 'Telegram не налаштовано' };
+    }
+
+    const message =
+      `🔔 <b>Тестове сповіщення</b>\n` +
+      `━━━━━━━━━━━━━━━━\n` +
+      `SiteMonitor підключено успішно!\n` +
+      `Ви отримуватимете алерти про статус сайтів.`;
+
+    await this.sendMessage(message, 'тестове повідомлення');
+    return { ok: true, message: 'Тестове повідомлення надіслано' };
+  }
+
+  private escapeHtml(text: string): string {
+    return text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
 }

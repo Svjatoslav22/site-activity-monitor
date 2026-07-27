@@ -53,34 +53,49 @@
             >
           </div>
           <div class="flex items-center gap-2 sm:gap-4 shrink-0">
-            <!-- Telegram Icon Link -->
-            <a
-              href="https://t.me/pocketnote2vbot"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="text-gray-500 hover:text-blue-500 transition group flex items-center gap-1.5"
-              title="Перейти до Telegram Бота"
-            >
-              <i
-                class="ph ph-telegram-logo text-2xl group-hover:scale-110 transition-transform"
-              ></i>
-              <span class="hidden sm:inline text-sm font-medium">TG Бот</span>
-            </a>
+            <!-- Telegram -->
+            <div id="telegram-widget" class="flex items-center gap-1.5">
+              <a
+                id="telegram-link"
+                href="https://t.me/pocketnote2vbot"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="text-gray-500 hover:text-blue-500 transition group flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-blue-50"
+                title="Telegram бот"
+              >
+                <i class="ph ph-telegram-logo text-xl group-hover:scale-110 transition-transform"></i>
+                <span class="hidden sm:flex flex-col leading-tight">
+                  <span class="text-xs font-medium text-gray-700">Telegram</span>
+                  <span id="telegram-status-text" class="text-[10px] text-gray-400">...</span>
+                </span>
+              </a>
+              <button
+                id="telegram-test-btn"
+                onclick="sendTelegramTest()"
+                class="hidden sm:flex text-xs text-gray-400 hover:text-blue-600 px-1.5 py-0.5 rounded border border-gray-200 hover:border-blue-300 transition"
+                title="Надіслати тест"
+              >
+                Тест
+              </button>
+            </div>
 
             <div class="h-4 w-px bg-gray-200"></div>
-            <!-- Розділювач -->
 
             <button
-              class="text-gray-500 hover:text-gray-700 transition"
-              title="Сповіщення"
+              onclick="fetchSitesData()"
+              class="text-gray-500 hover:text-gray-700 transition p-1.5 rounded-lg hover:bg-gray-100"
+              title="Оновити всі сайти"
             >
-              <i class="ph ph-bell text-xl"></i>
+              <i id="global-refresh-icon" class="ph ph-arrows-clockwise text-xl"></i>
             </button>
+
             <div
-              class="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm shadow-sm cursor-pointer"
+              id="profile-avatar"
+              onclick="toggleProfilePanel()"
+              class="h-8 w-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300 transition"
               title="Профіль"
             >
-              А
+              <span id="avatar-letter">А</span>
             </div>
           </div>
         </div>
@@ -115,6 +130,56 @@
         <!-- Картки генеруватимуться тут за допомогою JavaScript -->
       </div>
     </main>
+
+    <!-- Панель профілю -->
+    <div
+      id="profile-panel"
+      class="fixed inset-0 bg-gray-900/40 hidden items-start justify-end z-50 backdrop-blur-sm"
+      onclick="if(event.target===this) closeProfilePanel()"
+    >
+      <div class="bg-white h-full w-full max-w-sm shadow-2xl flex flex-col animate-[slideIn_0.2s_ease]">
+        <div class="px-5 py-4 border-b border-gray-100 flex justify-between items-center">
+          <h3 class="text-lg font-semibold text-gray-900">Профіль</h3>
+          <button onclick="closeProfilePanel()" class="text-gray-400 hover:text-gray-600">
+            <i class="ph ph-x text-xl"></i>
+          </button>
+        </div>
+        <form id="profile-form" onsubmit="handleProfileSubmit(event)" class="flex-1 overflow-y-auto p-5 space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Ім'я</label>
+            <input type="text" id="profile-name" required
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <input type="email" id="profile-email" placeholder="you@example.com"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Telegram (@username)</label>
+            <input type="text" id="profile-telegram" placeholder="@username"
+              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm" />
+          </div>
+          <div class="space-y-3 pt-2">
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" id="profile-notify-down" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <span class="text-sm text-gray-700">Сповіщати про падіння сайтів</span>
+            </label>
+            <label class="flex items-center gap-3 cursor-pointer">
+              <input type="checkbox" id="profile-notify-recovery" class="rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+              <span class="text-sm text-gray-700">Сповіщати про відновлення</span>
+            </label>
+          </div>
+          <p id="profile-save-status" class="text-xs text-gray-400 hidden"></p>
+        </form>
+        <div class="p-5 border-t border-gray-100">
+          <button type="submit" form="profile-form"
+            class="w-full px-4 py-2.5 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition flex items-center justify-center gap-2">
+            <i class="ph ph-floppy-disk"></i> Зберегти профіль
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Модальне вікно: Додати сайт -->
     <div
@@ -303,6 +368,42 @@
       let searchQuery = '';
       let sitesData = [];
       let siteToDeleteId = null;
+      let refreshingSiteId = null;
+      let telegramStatus = { configured: false, botUrl: 'https://t.me/pocketnote2vbot' };
+
+      function formatPing(stats) {
+        if (stats.latestPing != null && stats.latestPing >= 0) {
+          return `${Math.round(stats.latestPing)} мс`;
+        }
+        if (stats.averageResponseTime != null && stats.averageResponseTime >= 0) {
+          return `${Math.round(stats.averageResponseTime)} мс (сер.)`;
+        }
+        return 'Очікування...';
+      }
+
+      function mapHistory(rawHistory) {
+        if (!Array.isArray(rawHistory) || rawHistory.length === 0) {
+          return Array(40).fill(0);
+        }
+        const bars = rawHistory
+          .slice(0, 40)
+          .reverse()
+          .map((check) =>
+            check.status === 'up' ||
+            check.statusCode === 200 ||
+            check.status === 'active'
+              ? 1
+              : 0,
+          );
+        while (bars.length < 40) bars.unshift(0);
+        return bars;
+      }
+
+      function mapStatus(lastStatus) {
+        if (lastStatus === 'up') return 'active';
+        if (lastStatus === 'down') return 'inactive';
+        return 'pending';
+      }
 
       // --- DOM Elements ---
       let grid, searchInput, countAll, countActive, countInactive;
@@ -338,25 +439,14 @@
                 console.warn(`Could not fetch stats for ${item.name}`);
               }
 
-              let history = Array(40).fill(1);
+              let history = Array(40).fill(0);
               try {
                 const historyResponse = await fetch(
                   `/api/monitors/${item._id || item.id}/history`,
                 );
                 if (historyResponse.ok) {
                   const rawHistory = await historyResponse.json();
-                  if (Array.isArray(rawHistory)) {
-                    history = rawHistory
-                      .slice(-40)
-                      .map((check) =>
-                        check.status === 'up' ||
-                        check.statusCode === 200 ||
-                        check.status === 'active'
-                          ? 1
-                          : 0,
-                      );
-                    while (history.length < 40) history.unshift(1);
-                  }
+                  history = mapHistory(rawHistory);
                 }
               } catch (e) {
                 console.warn(`Could not fetch history for ${item.name}`);
@@ -364,25 +454,30 @@
 
               const lastCheckedDate = stats.lastCheck
                 ? new Date(stats.lastCheck)
-                : new Date();
-              const formattedTime = lastCheckedDate.toLocaleTimeString(
-                'uk-UA',
-                { hour: '2-digit', minute: '2-digit' },
-              );
+                : item.lastCheckedAt
+                  ? new Date(item.lastCheckedAt)
+                  : null;
+              const formattedTime = lastCheckedDate
+                ? lastCheckedDate.toLocaleTimeString('uk-UA', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                  })
+                : 'Ще не перевірено';
 
               return {
                 id: item._id || item.id,
                 name: item.name || 'Сайт',
                 url: item.url || item.urlToCheck || 'N/A',
                 interval: item.interval || 5,
-                status: item.lastStatus === 'up' ? 'active' : 'inactive',
-                uptime: stats.uptimePercentage
-                  ? stats.uptimePercentage.toFixed(2)
-                  : 100,
+                status: mapStatus(item.lastStatus),
+                uptime:
+                  stats.uptimePercentage != null
+                    ? Number(stats.uptimePercentage).toFixed(1)
+                    : stats.uptimePercent != null
+                      ? Number(stats.uptimePercent).toFixed(1)
+                      : '—',
                 lastChecked: formattedTime,
-                ping: stats.averageResponseTime
-                  ? `${Math.round(stats.averageResponseTime)} мс`
-                  : 'N/A',
+                ping: formatPing(stats),
                 history: history,
               };
             }),
@@ -441,6 +536,8 @@
         }
 
         fetchSitesData();
+        fetchTelegramStatus();
+        loadProfile();
         setInterval(fetchSitesData, 30000);
 
         if (searchInput) {
@@ -560,14 +657,28 @@
 
         filteredSites.forEach((site) => {
           const isActive = site.status === 'active';
+          const isPending = site.status === 'pending';
           const statusBadgeBg = isActive
             ? 'bg-emerald-50 border-emerald-200'
-            : 'bg-red-50 border-red-200';
+            : isPending
+              ? 'bg-amber-50 border-amber-200'
+              : 'bg-red-50 border-red-200';
           const statusBadgeText = isActive
             ? 'text-emerald-700'
-            : 'text-red-700';
-          const statusDot = isActive ? 'bg-emerald-500' : 'bg-red-500';
-          const statusLabel = isActive ? 'Активний' : 'Неактивний';
+            : isPending
+              ? 'text-amber-700'
+              : 'text-red-700';
+          const statusDot = isActive
+            ? 'bg-emerald-500'
+            : isPending
+              ? 'bg-amber-400 animate-pulse'
+              : 'bg-red-500';
+          const statusLabel = isActive
+            ? 'Активний'
+            : isPending
+              ? 'Перевірка...'
+              : 'Неактивний';
+          const isRefreshing = refreshingSiteId === site.id;
 
           const cardHtml = `
                     <div class="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200 flex flex-col group">
@@ -585,6 +696,9 @@
                                             <a href="${site.url}" target="_blank" class="text-gray-400 hover:text-blue-500 transition-colors" title="Відкрити сайт">
                                                 <i class="ph ph-arrow-square-out"></i>
                                             </a>
+                                            <button onclick="refreshSite('${site.id}')" class="text-gray-400 hover:text-emerald-500 transition-colors ${isRefreshing ? 'animate-spin text-emerald-500' : ''}" title="Оновити зараз" ${isRefreshing ? 'disabled' : ''}>
+                                                <i class="ph ph-arrows-clockwise"></i>
+                                            </button>
                                             <button onclick="openEditModal('${site.id}')" class="text-gray-400 hover:text-blue-500 transition-colors" title="Редагувати">
                                                 <i class="ph ph-pencil-simple"></i>
                                             </button>
@@ -612,8 +726,8 @@
                         <!-- Історія -->
                         <div class="mb-4">
                             <div class="flex justify-between items-end text-xs text-gray-400 mb-1.5 px-1">
-                                <span>30 днів тому</span>
-                                <span>Сьогодні</span>
+                                <span>Раніше</span>
+                                <span>Зараз</span>
                             </div>
                             <div class="flex items-center overflow-x-auto gap-0.5 w-full pb-1 sm:pb-0 sm:justify-between">
                                 ${generateHistoryHtml(site.history)}
@@ -633,14 +747,162 @@
                                 </span>
                             </div>
                             
-                            <button class="text-blue-600 hover:text-blue-700 font-medium transition-colors cursor-pointer text-sm">
-                                Деталі
+                            <button onclick="refreshSite('${site.id}')" class="text-emerald-600 hover:text-emerald-700 font-medium transition-colors cursor-pointer text-sm flex items-center gap-1 ${isRefreshing ? 'opacity-50' : ''}" ${isRefreshing ? 'disabled' : ''}>
+                                <i class="ph ph-arrows-clockwise ${isRefreshing ? 'animate-spin' : ''}"></i>
+                                ${isRefreshing ? 'Перевірка...' : 'Оновити'}
                             </button>
                         </div>
                     </div>
                 `;
           grid.innerHTML += cardHtml;
         });
+      }
+
+      async function refreshSite(id) {
+        if (refreshingSiteId) return;
+        refreshingSiteId = id;
+        renderSites();
+
+        try {
+          const response = await fetch(`/api/monitors/${id}/check`, {
+            method: 'POST',
+          });
+          if (!response.ok) throw new Error('Помилка перевірки');
+          await fetchSitesData();
+        } catch (error) {
+          console.error('Помилка оновлення сайту:', error);
+        } finally {
+          refreshingSiteId = null;
+          renderSites();
+        }
+      }
+
+      async function fetchTelegramStatus() {
+        try {
+          const response = await fetch('/api/telegram/status');
+          if (!response.ok) return;
+          telegramStatus = await response.json();
+
+          const link = document.getElementById('telegram-link');
+          const statusText = document.getElementById('telegram-status-text');
+          const testBtn = document.getElementById('telegram-test-btn');
+
+          if (link && telegramStatus.botUrl) {
+            link.href = telegramStatus.botUrl;
+          }
+
+          if (statusText) {
+            statusText.textContent = telegramStatus.configured
+              ? '● Підключено'
+              : '○ Не налаштовано';
+            statusText.className = telegramStatus.configured
+              ? 'text-[10px] text-emerald-600 font-medium'
+              : 'text-[10px] text-gray-400';
+          }
+
+          if (testBtn) {
+            testBtn.classList.toggle('hidden', !telegramStatus.configured);
+            testBtn.classList.toggle('sm:flex', telegramStatus.configured);
+          }
+        } catch (e) {
+          console.warn('Telegram status unavailable');
+        }
+      }
+
+      async function sendTelegramTest() {
+        const btn = document.getElementById('telegram-test-btn');
+        if (btn) {
+          btn.textContent = '...';
+          btn.disabled = true;
+        }
+        try {
+          const response = await fetch('/api/telegram/test', { method: 'POST' });
+          const data = await response.json();
+          alert(data.ok ? '✅ ' + data.message : '❌ ' + data.message);
+        } catch (e) {
+          alert('Помилка надсилання тесту');
+        } finally {
+          if (btn) {
+            btn.textContent = 'Тест';
+            btn.disabled = false;
+          }
+        }
+      }
+
+      function toggleProfilePanel() {
+        const panel = document.getElementById('profile-panel');
+        if (!panel) return;
+        panel.classList.remove('hidden');
+        panel.classList.add('flex');
+      }
+
+      function closeProfilePanel() {
+        const panel = document.getElementById('profile-panel');
+        if (!panel) return;
+        panel.classList.add('hidden');
+        panel.classList.remove('flex');
+      }
+
+      async function loadProfile() {
+        try {
+          const response = await fetch('/api/profile');
+          if (!response.ok) return;
+          const profile = await response.json();
+
+          document.getElementById('profile-name').value = profile.name || '';
+          document.getElementById('profile-email').value = profile.email || '';
+          document.getElementById('profile-telegram').value =
+            profile.telegramUsername || '';
+          document.getElementById('profile-notify-down').checked =
+            profile.notifyOnDown !== false;
+          document.getElementById('profile-notify-recovery').checked =
+            profile.notifyOnRecovery !== false;
+
+          const letter = (profile.name || 'А').charAt(0).toUpperCase();
+          const avatarEl = document.getElementById('avatar-letter');
+          if (avatarEl) avatarEl.textContent = letter;
+        } catch (e) {
+          console.warn('Profile load failed');
+        }
+      }
+
+      async function handleProfileSubmit(event) {
+        event.preventDefault();
+        const statusEl = document.getElementById('profile-save-status');
+        const payload = {
+          name: document.getElementById('profile-name').value,
+          email: document.getElementById('profile-email').value,
+          telegramUsername: document.getElementById('profile-telegram').value,
+          notifyOnDown: document.getElementById('profile-notify-down').checked,
+          notifyOnRecovery:
+            document.getElementById('profile-notify-recovery').checked,
+        };
+
+        try {
+          const response = await fetch('/api/profile', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+          });
+          if (!response.ok) throw new Error('Помилка збереження');
+
+          const profile = await response.json();
+          const letter = (profile.name || 'А').charAt(0).toUpperCase();
+          document.getElementById('avatar-letter').textContent = letter;
+
+          if (statusEl) {
+            statusEl.textContent = '✓ Збережено в базу';
+            statusEl.className = 'text-xs text-emerald-600';
+            statusEl.classList.remove('hidden');
+            setTimeout(() => statusEl.classList.add('hidden'), 2500);
+          }
+        } catch (error) {
+          if (statusEl) {
+            statusEl.textContent = 'Помилка збереження';
+            statusEl.className = 'text-xs text-red-500';
+            statusEl.classList.remove('hidden');
+          }
+        }
       }
 
       // --- Управління модальними вікнами ---

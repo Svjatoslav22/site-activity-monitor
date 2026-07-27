@@ -48,36 +48,49 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
       `Старт моніторингу для ${monitor.name} кожні ${monitor.interval} хв.`,
     );
 
+    void this.runCheckForMonitor(monitorId);
+
     const intervalId = setInterval(() => {
-      // Використовуємо void, щоб сказати TS, що ми не чекаємо повернення проміса
-      void (async () => {
-        this.logger.debug(`[${monitor.name}] Пінгуємо: ${monitor.url}`);
-
-        const result = await this.checksService.runCheck(monitor);
-
-        if (result.previousStatus === 'up' && result.status === 'down') {
-          await this.telegramService.sendAlert(
-            monitor.name,
-            monitor.url,
-            result.error || "Помилка з'єднання",
-          );
-        }
-
-        if (result.previousStatus === 'down' && result.status === 'up') {
-          await this.telegramService.sendRecovery(
-            monitor.name,
-            monitor.url,
-            result.responseTime,
-          );
-        }
-
-        this.logger.debug(
-          `[${monitor.name}] Статус: ${result.status} (${result.responseTime}ms)`,
-        );
-      })();
+      void this.runCheckForMonitor(monitorId);
     }, ms);
 
     this.intervals.set(monitorId, intervalId);
+  }
+
+  async runCheckForMonitor(monitorId: string) {
+    const monitor = await this.monitorModel.findById(monitorId);
+    if (!monitor || !monitor.isActive) return;
+
+    this.logger.debug(`[${monitor.name}] Пінгуємо: ${monitor.url}`);
+
+    const result = await this.checksService.runCheck(monitor);
+
+    if (result.previousStatus === 'up' && result.status === 'down') {
+      await this.telegramService.sendAlert(
+        monitor.name,
+        monitor.url,
+        result.error || "Помилка з'єднання",
+        result.responseTime,
+      );
+    }
+
+    if (
+      (result.previousStatus === 'down' ||
+        result.previousStatus === 'unknown') &&
+      result.status === 'up'
+    ) {
+      await this.telegramService.sendRecovery(
+        monitor.name,
+        monitor.url,
+        result.responseTime,
+      );
+    }
+
+    this.logger.debug(
+      `[${monitor.name}] Статус: ${result.status} (${result.responseTime}ms)`,
+    );
+
+    return result;
   }
 
   stopMonitor(monitorId: string) {

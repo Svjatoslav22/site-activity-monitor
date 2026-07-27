@@ -74,8 +74,37 @@ export class ChecksService {
       monitorId,
       status: 'up',
     });
-    const uptimePercent =
-      totalChecks === 0 ? 0 : Math.round((upChecks / totalChecks) * 100);
-    return { uptimePercent, totalChecks };
+
+    const latestCheck = await this.checkModel
+      .findOne({ monitorId })
+      .sort({ createdAt: -1 });
+
+    const avgResult = await this.checkModel.aggregate<{ avg: number }>([
+      { $match: { monitorId, status: 'up', responseTime: { $gt: 0 } } },
+      { $group: { _id: null, avg: { $avg: '$responseTime' } } },
+    ]);
+
+    const monitor = await this.monitorModel.findById(monitorId);
+
+    const uptimePercentage =
+      totalChecks === 0
+        ? 100
+        : Math.round((upChecks / totalChecks) * 10000) / 100;
+
+    const averageResponseTime =
+      avgResult[0]?.avg ?? latestCheck?.responseTime ?? null;
+    const latestPing = latestCheck?.responseTime ?? null;
+    const lastCheck =
+      monitor?.lastCheckedAt ?? latestCheck?.createdAt ?? null;
+
+    return {
+      uptimePercentage,
+      uptimePercent: uptimePercentage,
+      averageResponseTime,
+      latestPing,
+      lastCheck,
+      totalChecks,
+      lastStatus: latestCheck?.status ?? monitor?.lastStatus ?? 'unknown',
+    };
   }
 }
