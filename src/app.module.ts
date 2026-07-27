@@ -21,7 +21,7 @@ import { UsersModule } from './users/users.module';
     ConfigModule.forRoot({
       isGlobal: true, // 👈 Робимо модуль доступним глобально
     }),
-    MongooseModule.forRoot(process.env.DB_URL!),
+    MongooseModule.forRoot(process.env.DB_URL),
 
     MonitorsModule,
 
