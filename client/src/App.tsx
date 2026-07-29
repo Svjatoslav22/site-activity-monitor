@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import SiteCard from './components/SiteCard';
+import DeleteModal from './components/DeleteModal'; // ДОДАНО ІМПОРТ МОДАЛКИ
 
-// 1. Описуємо, як виглядають "сирі" дані, що приходять з твого NestJS бекенду
+// 1. Описуємо типи для даних, які приходять з бекенду
 interface ApiMonitor {
   _id?: string;
   id?: string;
@@ -10,9 +11,23 @@ interface ApiMonitor {
   url?: string;
   urlToCheck?: string;
   lastStatus?: string;
+  lastCheckedAt?: string;
 }
 
-// 2. Описуємо структуру для нашого стейту (така ж, як пропси в SiteCard)
+interface MonitorStats {
+  lastCheck?: string;
+  latestPing?: number;
+  averageResponseTime?: number;
+  uptimePercentage?: number | string;
+  uptimePercent?: number | string;
+}
+
+interface HistoryCheck {
+  status?: string;
+  statusCode?: number;
+}
+
+// 2. Тип для нашої готової картки
 interface Site {
   id: string;
   name: string;
@@ -25,9 +40,16 @@ interface Site {
 }
 
 export default function App() {
-  // Використовуємо наш інтерфейс Site[] замість any[]
   const [sites, setSites] = useState<Site[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // --- СТАНИ ДЛЯ МОДАЛОК (ВИДАЛЕННЯ) ---
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [siteToDelete, setSiteToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchSites = async () => {
     try {
@@ -35,24 +57,87 @@ export default function App() {
       const response = await fetch('/api/monitors');
       if (!response.ok) throw new Error('Помилка сервера');
 
-      const data = await response.json();
+      const monitorsData = await response.json();
 
-      // Вказуємо, що item має тип ApiMonitor
-      const formattedData: Site[] = data.map((item: ApiMonitor) => ({
-        id: item._id || item.id || '',
-        name: item.name || 'Сайт',
-        url: item.url || item.urlToCheck || 'N/A',
-        status: item.lastStatus === 'up' ? 'active' : 'inactive',
-        uptime: 100, // Заглушка
-        lastChecked: new Date().toLocaleTimeString('uk-UA', {
-          hour: '2-digit',
-          minute: '2-digit',
+      const enrichedSitesData = await Promise.all(
+        monitorsData.map(async (item: ApiMonitor) => {
+          const id = item._id || item.id || '';
+
+          let stats: MonitorStats = {};
+          let history: number[] = Array(40).fill(0);
+
+          try {
+            const [statsRes, histRes] = await Promise.all([
+              fetch(`/api/monitors/${id}/stats`),
+              fetch(`/api/monitors/${id}/history`),
+            ]);
+
+            if (statsRes.ok) stats = await statsRes.json();
+
+            if (histRes.ok) {
+              const rawHistory = await histRes.json();
+              if (Array.isArray(rawHistory) && rawHistory.length > 0) {
+                const bars = rawHistory
+                  .slice(0, 40)
+                  .reverse()
+                  .map((check: HistoryCheck) =>
+                    check.status === 'up' ||
+                    check.statusCode === 200 ||
+                    check.status === 'active'
+                      ? 1
+                      : 0,
+                  );
+                while (bars.length < 40) bars.unshift(0);
+                history = bars;
+              }
+            }
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (e) {
+            console.warn(`Could not fetch stats/history for ${item.name}`);
+          }
+
+          const lastCheckedDate = stats.lastCheck
+            ? new Date(stats.lastCheck)
+            : item.lastCheckedAt
+              ? new Date(item.lastCheckedAt)
+              : null;
+          const formattedTime = lastCheckedDate
+            ? lastCheckedDate.toLocaleTimeString('uk-UA', {
+                hour: '2-digit',
+                minute: '2-digit',
+              })
+            : 'Ще не перевірено';
+
+          let ping = 'Очікування...';
+          if (stats.latestPing != null && stats.latestPing >= 0)
+            ping = `${Math.round(stats.latestPing)} мс`;
+          else if (
+            stats.averageResponseTime != null &&
+            stats.averageResponseTime >= 0
+          )
+            ping = `${Math.round(stats.averageResponseTime)} мс (сер.)`;
+
+          const uptime =
+            stats.uptimePercentage != null
+              ? Number(stats.uptimePercentage).toFixed(1)
+              : stats.uptimePercent != null
+                ? Number(stats.uptimePercent).toFixed(1)
+                : '—';
+
+          return {
+            id,
+            name: item.name || 'Сайт',
+            url: item.url || item.urlToCheck || 'N/A',
+            status: item.lastStatus === 'up' ? 'active' : 'inactive',
+            uptime,
+            lastChecked: formattedTime,
+            ping,
+            history,
+          };
         }),
-        ping: '120 мс', // Заглушка
-        history: [], // Заглушка
-      }));
+      );
 
-      setSites(formattedData);
+      setSites(enrichedSitesData);
     } catch (error) {
       console.error('Помилка завантаження:', error);
     } finally {
@@ -61,19 +146,72 @@ export default function App() {
   };
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchSites();
+    const initFetch = async () => {
+      await fetchSites();
+    };
+
+    initFetch();
+
+    const interval = setInterval(fetchSites, 30000);
+    return () => clearInterval(interval);
   }, []);
 
-  const handleRefresh = (id: string) => {
-    console.log('Оновлюємо сайт з ID:', id);
+  const handleRefresh = async (id: string) => {
+    try {
+      const response = await fetch(`/api/monitors/${id}/check`, {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Помилка перевірки');
+      await fetchSites();
+    } catch (error) {
+      console.error('Помилка оновлення сайту:', error);
+    }
+  };
+
+  // --- ОБРОБНИКИ ДЛЯ МОДАЛОК ---
+
+  const handleEditClick = (site: Site) => {
+    console.log('Натиснуто редагувати для:', site.name);
+  };
+  const handleDeleteClick = (id: string, name: string) => {
+    setSiteToDelete({ id, name });
+    setIsDeleteModalOpen(true);
+  };
+  useEffect(() => {
+    // Обгортаємо перший виклик у асинхронну функцію, щоб лінтер не сварився на setState
+    const initFetch = async () => {
+      await fetchSites();
+    };
+
+    initFetch();
+
+    const interval = setInterval(fetchSites, 30000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const confirmDelete = async () => {
+    if (!siteToDelete) return;
+    setIsDeleting(true);
+    try {
+      const response = await fetch(`/api/monitors/${siteToDelete.id}`, {
+        method: 'DELETE',
+      });
+      if (!response.ok) throw new Error('Помилка при видаленні');
+
+      await fetchSites(); // Оновлюємо список після видалення
+      setIsDeleteModalOpen(false); // Закриваємо модалку
+    } catch (error) {
+      console.error('Помилка видалення:', error);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
     <div className="text-gray-800 antialiased min-h-screen flex flex-col bg-gray-50">
       <Navbar />
 
-      <main className="flex-grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+      <main className="grow max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -89,8 +227,10 @@ export default function App() {
           </button>
         </div>
 
-        {isLoading ? (
-          <div className="text-center py-12 text-gray-500">Завантаження...</div>
+        {isLoading && sites.length === 0 ? (
+          <div className="text-center py-12 text-gray-500">
+            <i className="ph ph-spinner animate-spin text-4xl text-blue-500"></i>
+          </div>
         ) : sites.length === 0 ? (
           <div className="text-center py-12 bg-white rounded-xl border border-gray-200">
             <p className="text-gray-500">Немає доданих сайтів.</p>
@@ -98,10 +238,25 @@ export default function App() {
         ) : (
           <div className="flex flex-col gap-4">
             {sites.map((site) => (
-              <SiteCard key={site.id} site={site} onRefresh={handleRefresh} />
+              <SiteCard
+                key={site.id}
+                site={site}
+                onRefresh={handleRefresh}
+                onEdit={handleEditClick} // ДОДАНО
+                onDelete={handleDeleteClick} // ДОДАНО
+              />
             ))}
           </div>
         )}
+
+        {/* --- ПІДКЛЮЧАЄМО МОДАЛКУ ВИДАЛЕННЯ --- */}
+        <DeleteModal
+          isOpen={isDeleteModalOpen}
+          siteName={siteToDelete?.name || ''}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={confirmDelete}
+          isDeleting={isDeleting}
+        />
       </main>
     </div>
   );
