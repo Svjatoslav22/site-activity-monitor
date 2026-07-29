@@ -3,8 +3,8 @@ import Navbar from './components/Navbar';
 import SiteCard from './components/SiteCard';
 import DeleteModal from './components/DeleteModal'; // ДОДАНО ІМПОРТ МОДАЛКИ
 import EditModal from './components/EditModal';
+import AddModal from './components/AddModal';
 
-// 1. Описуємо типи для даних, які приходять з бекенду
 interface ApiMonitor {
   _id?: string;
   id?: string;
@@ -28,7 +28,6 @@ interface HistoryCheck {
   statusCode?: number;
 }
 
-// 2. Тип для нашої готової картки
 interface Site {
   id: string;
   name: string;
@@ -41,15 +40,16 @@ interface Site {
 }
 
 export default function App() {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+
   const [sites, setSites] = useState<Site[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // --- СТАНИ ДЛЯ МОДАЛОК (РЕДАГУВАННЯ) ---
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [siteToEdit, setSiteToEdit] = useState<Site | null>(null);
 
-  // --- СТАНИ ДЛЯ МОДАЛОК (ВИДАЛЕННЯ) ---
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+
   const [siteToDelete, setSiteToDelete] = useState<{
     id: string;
     name: string;
@@ -227,7 +227,10 @@ export default function App() {
               Відстежуйте доступність ваших ресурсів у реальному часі
             </p>
           </div>
-          <button className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2">
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-gray-900 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition shadow-sm flex items-center gap-2"
+          >
             <i className="ph ph-plus-circle text-lg"></i>
             Додати сайт
           </button>
@@ -268,6 +271,11 @@ export default function App() {
           site={siteToEdit}
           onClose={() => setIsEditModalOpen(false)}
           onSaved={fetchSites} // Після збереження оновлюємо список
+        />
+        <AddModal
+          isOpen={isAddModalOpen}
+          onClose={() => setIsAddModalOpen(false)}
+          onAdded={fetchSites} // Оновлюємо список після додавання
         />
       </main>
     </div>
