@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "https://site-activity-monitor.onrender.com"
+      "destination": "https://site-activity-monitor.onrender.com/api/$1"
     },
     {
       "source": "/(.*)",
