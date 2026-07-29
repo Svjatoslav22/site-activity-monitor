@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Navbar from './components/Navbar';
 import SiteCard from './components/SiteCard';
 import DeleteModal from './components/DeleteModal'; // ДОДАНО ІМПОРТ МОДАЛКИ
+import EditModal from './components/EditModal';
 
 // 1. Описуємо типи для даних, які приходять з бекенду
 interface ApiMonitor {
@@ -42,6 +43,10 @@ interface Site {
 export default function App() {
   const [sites, setSites] = useState<Site[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // --- СТАНИ ДЛЯ МОДАЛОК (РЕДАГУВАННЯ) ---
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [siteToEdit, setSiteToEdit] = useState<Site | null>(null);
 
   // --- СТАНИ ДЛЯ МОДАЛОК (ВИДАЛЕННЯ) ---
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
@@ -171,7 +176,8 @@ export default function App() {
   // --- ОБРОБНИКИ ДЛЯ МОДАЛОК ---
 
   const handleEditClick = (site: Site) => {
-    console.log('Натиснуто редагувати для:', site.name);
+    setSiteToEdit(site);
+    setIsEditModalOpen(true);
   };
   const handleDeleteClick = (id: string, name: string) => {
     setSiteToDelete({ id, name });
@@ -256,6 +262,12 @@ export default function App() {
           onClose={() => setIsDeleteModalOpen(false)}
           onConfirm={confirmDelete}
           isDeleting={isDeleting}
+        />
+        <EditModal
+          isOpen={isEditModalOpen}
+          site={siteToEdit}
+          onClose={() => setIsEditModalOpen(false)}
+          onSaved={fetchSites} // Після збереження оновлюємо список
         />
       </main>
     </div>
