@@ -18,14 +18,21 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200 sticky top-0 z-10">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          <div className="flex items-center">
-            <i className="ph ph-activity text-blue-600 text-2xl mr-2"></i>
-            <span className="font-semibold text-lg tracking-tight text-gray-900">
-              SiteMonitor
-            </span>
+    <nav className="sticky top-0 z-20 border-b border-white/70 bg-white/80 shadow-sm backdrop-blur-xl">
+      <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 text-white shadow-lg shadow-blue-600/20 transition-transform duration-200 hover:scale-105">
+              <i className="ph ph-activity text-xl"></i>
+            </div>
+            <div className="leading-tight">
+              <span className="block text-base font-semibold tracking-tight text-gray-900 sm:text-lg">
+                SiteMonitor
+              </span>
+              <span className="hidden text-[11px] font-medium uppercase tracking-[0.24em] text-gray-400 sm:block">
+                Live uptime dashboard
+              </span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-4 shrink-0">
@@ -35,8 +42,9 @@ export default function Navbar() {
                 href="https://t.me/pocketnote2vbot"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-gray-500 hover:text-blue-500 transition group flex items-center gap-1.5 px-2 py-1 rounded-lg hover:bg-blue-50"
+                className="group flex items-center gap-1.5 rounded-lg px-2 py-1 text-gray-500 transition-all duration-200 hover:bg-blue-50 hover:text-blue-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 title="Telegram бот"
+                aria-label="Відкрити Telegram бот"
               >
                 <i className="ph ph-telegram-logo text-xl group-hover:scale-110 transition-transform"></i>
                 <span className="hidden sm:flex flex-col leading-tight">
@@ -51,8 +59,9 @@ export default function Navbar() {
               <button
                 onClick={sendTelegramTest}
                 disabled={isTesting}
-                className="hidden sm:flex text-xs text-gray-400 hover:text-blue-600 px-1.5 py-0.5 rounded border border-gray-200 hover:border-blue-300 transition disabled:opacity-50"
+                className="hidden items-center rounded-md border border-gray-200 px-2 py-1 text-xs font-medium text-gray-500 transition-all duration-200 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-600 disabled:cursor-not-allowed disabled:opacity-50 sm:inline-flex focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
                 title="Надіслати тест"
+                aria-label="Надіслати тестове повідомлення в Telegram"
               >
                 {isTesting ? '...' : 'Тест'}
               </button>
@@ -61,15 +70,17 @@ export default function Navbar() {
             <div className="h-4 w-px bg-gray-200"></div>
 
             <button
-              className="text-gray-500 hover:text-gray-700 transition p-1.5 rounded-lg hover:bg-gray-100"
+              className="rounded-lg p-2 text-gray-500 transition-all duration-200 hover:bg-gray-100 hover:text-gray-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
               title="Оновити всі сайти"
+              aria-label="Оновити всі сайти"
             >
               <i className="ph ph-arrows-clockwise text-xl"></i>
             </button>
 
             <div
-              className="h-8 w-8 rounded-full bg-linear-to-tr from-blue-500 to-purple-500 flex items-center justify-center text-white font-medium text-sm shadow-sm cursor-pointer hover:ring-2 hover:ring-blue-300 transition"
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:scale-105 hover:ring-2 hover:ring-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
               title="Профіль"
+              aria-label="Профіль адміністратора"
             >
               <span>А</span>
             </div>

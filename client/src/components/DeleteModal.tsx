@@ -16,15 +16,15 @@ export default function DeleteModal({
   if (!isOpen) return null; // Якщо isOpen = false, нічого не рендеримо
 
   return (
-    <div className="fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50 backdrop-blur-sm transition-opacity">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm mx-4 p-6 text-center transform transition-all animate-[fadeIn_0.2s_ease-out]">
-        <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-950/60 px-4 backdrop-blur-md transition-opacity">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-6 text-center shadow-2xl shadow-slate-900/20 transition-all duration-200 animate-[fadeIn_0.2s_ease-out]">
+        <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-red-100">
           <i className="ph ph-trash text-2xl text-red-600"></i>
         </div>
-        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+        <h3 className="mb-2 text-lg font-semibold tracking-tight text-gray-900">
           Видалити сайт?
         </h3>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="mb-6 text-sm text-gray-500">
           Ви дійсно хочете видалити
           <span className="font-medium text-gray-900 ml-1 mr-1">
             {siteName}
@@ -35,14 +35,14 @@ export default function DeleteModal({
           <button
             onClick={onClose}
             disabled={isDeleting}
-            className="px-4 py-2 w-full text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition disabled:opacity-50"
+            className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-all duration-200 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-gray-500 focus-visible:ring-offset-2"
           >
             Скасувати
           </button>
           <button
             onClick={onConfirm}
             disabled={isDeleting}
-            className="px-4 py-2 w-full text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50"
+            className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
           >
             {isDeleting ? (
               <i className="ph ph-spinner animate-spin text-lg"></i>

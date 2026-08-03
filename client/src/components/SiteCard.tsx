@@ -23,6 +23,7 @@ interface SiteProps {
     interval?: number;
   }) => void;
   onDelete: (id: string, name: string) => void; // ТУТ ВАЖЛИВО!
+  isRefreshing?: boolean;
 }
 
 export default function SiteCard({
@@ -30,6 +31,7 @@ export default function SiteCard({
   onRefresh,
   onEdit,
   onDelete,
+  isRefreshing = false,
 }: SiteProps) {
   const isActive = site.status === 'active';
   const isPending = site.status === 'pending';
@@ -38,17 +40,17 @@ export default function SiteCard({
     ? 'bg-emerald-50 border-emerald-200'
     : isPending
       ? 'bg-amber-50 border-amber-200'
-      : 'bg-red-50 border-red-200';
+      : 'bg-gray-50 border-gray-200';
   const statusBadgeText = isActive
     ? 'text-emerald-700'
     : isPending
       ? 'text-amber-700'
-      : 'text-red-700';
+      : 'text-gray-600';
   const statusDot = isActive
     ? 'bg-emerald-500'
     : isPending
       ? 'bg-amber-400 animate-pulse'
-      : 'bg-red-500';
+      : 'bg-gray-400';
   const statusLabel = isActive
     ? 'Активний'
     : isPending
@@ -56,103 +58,119 @@ export default function SiteCard({
       : 'Неактивний';
 
   return (
-    <div className="bg-white rounded-xl border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200 flex flex-col group">
-      {/* Шапка картки */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
-        <div className="flex items-center gap-3 w-full sm:w-auto">
-          <div className="h-10 w-10 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0">
-            <i className="ph ph-globe text-gray-500 text-xl group-hover:text-blue-500 transition-colors"></i>
-          </div>
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-gray-900 text-base flex items-center gap-2">
-              <span className="truncate">{site.name}</span>
-              <div className="flex items-center gap-1 ml-2 shrink-0">
-                <a
-                  href={site.url}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-gray-400 hover:text-blue-500 transition-colors"
-                  title="Відкрити сайт"
-                >
-                  <i className="ph ph-arrow-square-out"></i>
-                </a>
-                {/* ДОДАНО КНОПКИ РЕДАГУВАННЯ ТА ВИДАЛЕННЯ */}
-                <button
-                  onClick={() => onEdit(site)}
-                  className="text-gray-400 hover:text-blue-500 transition-colors"
-                  title="Редагувати"
-                >
-                  <i className="ph ph-pencil-simple"></i>
-                </button>
-                <button
-                  onClick={() => onDelete(site.id, site.name)}
-                  className="text-gray-400 hover:text-red-500 transition-colors"
-                  title="Видалити"
-                >
-                  <i className="ph ph-trash"></i>
-                </button>
-              </div>
-            </h3>
-            <p className="text-sm text-gray-500 font-mono mt-0.5 truncate">
-              {site.url}
-            </p>
-          </div>
-        </div>
+    <div className="group relative overflow-hidden rounded-2xl border border-gray-200 bg-white/95 p-5 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-gray-300 hover:shadow-xl hover:shadow-slate-200/60">
+      <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-white via-white to-slate-50 opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
 
-        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end shrink-0">
-          <div className="text-right hidden sm:block">
-            <div className="text-sm font-medium text-gray-900">
-              {site.uptime}%
+      <div className="relative">
+        {/* Шапка картки */}
+        <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-gray-100 bg-gray-50 transition-transform duration-300 group-hover:scale-105">
+              <i className="ph ph-globe text-xl text-gray-500 transition-colors group-hover:text-blue-500"></i>
             </div>
-            <div className="text-xs text-gray-500">Аптайм</div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h3 className="truncate text-base font-semibold leading-tight text-gray-900 sm:text-[17px]">
+                  {site.name}
+                </h3>
+                <div className="flex shrink-0 items-center gap-1 text-gray-400">
+                  <a
+                    href={site.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="rounded p-1 transition-all hover:bg-blue-50 hover:text-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    title="Відкрити сайт"
+                    aria-label={`Відкрити ${site.name} у новій вкладці`}
+                  >
+                    <i className="ph ph-arrow-square-out"></i>
+                  </a>
+                  <button
+                    onClick={() => onEdit(site)}
+                    className="rounded p-1 transition-all hover:bg-blue-50 hover:text-blue-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+                    title="Редагувати"
+                    aria-label={`Редагувати ${site.name}`}
+                  >
+                    <i className="ph ph-pencil-simple"></i>
+                  </button>
+                  <button
+                    onClick={() => onDelete(site.id, site.name)}
+                    className="rounded p-1 transition-all hover:bg-red-50 hover:text-red-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
+                    title="Видалити"
+                    aria-label={`Видалити ${site.name}`}
+                  >
+                    <i className="ph ph-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <p className="mt-0.5 truncate font-mono text-sm text-gray-500">
+                {site.url}
+              </p>
+            </div>
           </div>
-          <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${statusBadgeBg} ${statusBadgeText}`}
-          >
+
+          <div className="flex w-full shrink-0 items-center justify-between gap-3 sm:w-auto sm:justify-end">
+            <div className="hidden text-right sm:block">
+              <div className="text-sm font-semibold tracking-tight text-gray-900">
+                {site.uptime}%
+              </div>
+              <div className="text-xs text-gray-500">Аптайм</div>
+            </div>
             <span
-              className={`h-1.5 w-1.5 rounded-full ${statusDot} ${!isActive ? 'animate-pulse' : ''}`}
-            ></span>
-            {statusLabel}
-          </span>
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold ${statusBadgeBg} ${statusBadgeText}`}
+              aria-label={`Статус сайту: ${statusLabel}`}
+            >
+              <span
+                className={`h-2 w-2 rounded-full ${statusDot} ${!isActive ? 'animate-pulse' : ''}`}
+              ></span>
+              {statusLabel}
+            </span>
+          </div>
         </div>
-      </div>
 
-      {/* Історія (ШКАЛА) */}
-      <div className="mb-4">
-        <div className="flex justify-between items-end text-xs text-gray-400 mb-1.5 px-1">
-          <span>Раніше</span>
-          <span>Зараз</span>
+        {/* Історія (ШКАЛА) */}
+        <div className="mb-4">
+          <div className="mb-1.5 flex items-end justify-between px-1 text-xs font-medium text-gray-400">
+            <span>Раніше</span>
+            <span>Зараз</span>
+          </div>
+          <div className="flex w-full items-center gap-0.5 overflow-x-auto pb-1 sm:justify-between sm:pb-0">
+            {site.history.map((status, index) => (
+              <div
+                key={index}
+                className={`history-bar h-6 w-2 shrink-0 cursor-pointer rounded-[3px] sm:h-8 sm:w-2 ${
+                  status === 1 ? 'bg-emerald-400' : 'bg-gray-300'
+                }`}
+                title={status === 1 ? 'Доступний' : 'Недоступний'}
+              ></div>
+            ))}
+          </div>
         </div>
-        <div className="flex items-center overflow-x-auto gap-0.5 w-full pb-1 sm:pb-0 sm:justify-between">
-          {site.history.map((status, index) => (
-            <div
-              key={index}
-              className={`w-2 sm:w-2 h-6 sm:h-8 rounded-sm history-bar cursor-pointer shrink-0 ${
-                status === 1 ? 'bg-emerald-400' : 'bg-red-500'
-              }`}
-              title={status === 1 ? 'Доступний' : 'Недоступний'}
-            ></div>
-          ))}
-        </div>
-      </div>
 
-      {/* Підвал картки */}
-      <div className="mt-auto pt-4 border-t border-gray-100 flex items-center justify-between gap-3 text-xs text-gray-500">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <span className="flex items-center gap-1">
-            <i className="ph ph-clock text-gray-400"></i> Перевірено:{' '}
-            {site.lastChecked}
-          </span>
-          <span className="flex items-center gap-1">
-            <i className="ph ph-activity text-gray-400"></i> Пінг: {site.ping}
-          </span>
+        {/* Підвал картки */}
+        <div className="mt-auto flex flex-col gap-3 border-t border-gray-100 pt-4 text-xs text-gray-500 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+            <span className="flex items-center gap-1">
+              <i className="ph ph-clock text-gray-400"></i> Перевірено:{' '}
+              {site.lastChecked}
+            </span>
+            <span className="flex items-center gap-1">
+              <i className="ph ph-activity text-gray-400"></i> Пінг: {site.ping}
+            </span>
+          </div>
+          <button
+            onClick={() => onRefresh(site.id)}
+            disabled={isRefreshing}
+            className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-medium text-emerald-600 transition-all duration-200 hover:gap-2 hover:text-emerald-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+            aria-label={`Оновити стан сайту ${site.name}`}
+          >
+            {isRefreshing ? (
+              <i className="ph ph-spinner animate-spin"></i>
+            ) : (
+              <i className="ph ph-arrows-clockwise transition-transform duration-300 group-hover:rotate-180"></i>
+            )}
+            <span>Оновити</span>
+          </button>
         </div>
-        <button
-          onClick={() => onRefresh(site.id)}
-          className="text-emerald-600 hover:text-emerald-700 font-medium transition-colors cursor-pointer text-sm flex items-center gap-1"
-        >
-          <i className="ph ph-arrows-clockwise"></i> Оновити
-        </button>
       </div>
     </div>
   );
