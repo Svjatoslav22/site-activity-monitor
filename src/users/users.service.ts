@@ -22,4 +22,12 @@ export class UsersService {
     const user = await this.getProfile();
     return this.userModel.findByIdAndUpdate(user._id, dto, { new: true });
   }
+
+  async findByEmail(email: string): Promise<UserDocument | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  async createUser(data: Partial<User>): Promise<UserDocument> {
+    return this.userModel.create(data as any);
+  }
 }

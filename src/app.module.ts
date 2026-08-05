@@ -12,6 +12,7 @@ import { SchedulerModule } from './scheduler/scheduler.module';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UsersModule } from './users/users.module';
 import { TelegramModule } from './telegram/telegram.module';
+import { AuthModule } from './auth/auth.module';
 @Module({
   imports: [
     ServeStaticModule.forRoot({
@@ -30,6 +31,7 @@ import { TelegramModule } from './telegram/telegram.module';
     SchedulerModule, // 👈 Додали MonitorsModule
     ScheduleModule.forRoot(),
     UsersModule,
+    AuthModule,
     TelegramModule, // 👈 Додали TelegramModule для роботи з Telegram ботом
   ],
   controllers: [AppController],

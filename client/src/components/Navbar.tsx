@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Login from './Login';
 
 export default function Navbar() {
   const [isTesting, setIsTesting] = useState(false);
@@ -77,12 +78,8 @@ export default function Navbar() {
               <i className="ph ph-arrows-clockwise text-xl"></i>
             </button>
 
-            <div
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 text-sm font-medium text-white shadow-sm transition-all duration-200 hover:scale-105 hover:ring-2 hover:ring-blue-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
-              title="Профіль"
-              aria-label="Профіль адміністратора"
-            >
-              <span>А</span>
+            <div className="hidden sm:block">
+              <Login />
             </div>
           </div>
         </div>
