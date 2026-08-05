@@ -429,7 +429,7 @@ export default function App() {
     }, 30000);
 
     return () => window.clearInterval(interval);
-  }, [token]);
+  }, [token, setUser, setSites, setToken]);
 
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -495,7 +495,7 @@ export default function App() {
       if (!response.ok) throw new Error('Помилка перевірки');
       await loadSites();
       showNotification('Сайт оновлено');
-    } catch (error) {
+    } catch {
       showNotification('Не вдалося оновити сайт');
     } finally {
       setRefreshingId(null);
@@ -561,7 +561,7 @@ export default function App() {
       showNotification(
         siteModal.mode === 'create' ? 'Сайт додано' : 'Сайт оновлено',
       );
-    } catch (error) {
+    } catch {
       showNotification('Не вдалося зберегти сайт');
     } finally {
       setSavingSite(false);
@@ -582,7 +582,7 @@ export default function App() {
       setDeleteTarget(null);
       await loadSites();
       showNotification('Сайт видалено');
-    } catch (error) {
+    } catch {
       showNotification('Не вдалося видалити сайт');
     } finally {
       setDeleting(false);
@@ -608,7 +608,7 @@ export default function App() {
     const systemPrompt = 'Ти досвідчений DevOps інженер та Site Reliability Expert (SRE). Відповідай чітко, структуровано, українською мовою. Використовуй формальний тон.';
 
     try {
-      const apiKey = '';
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -625,7 +625,7 @@ export default function App() {
         loading: false,
         data: text || 'Не вдалося згенерувати звіт.',
       }));
-    } catch (error) {
+    } catch {
       setAiModal((prev) => ({
         ...prev,
         loading: false,
@@ -648,7 +648,7 @@ export default function App() {
     const systemPrompt = 'Ти Chief Technology Officer (CTO). Відповідай професійно, українською мовою. Форматуй текст зручно для читання, використовуючи списки.';
 
     try {
-      const apiKey = '';
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -665,7 +665,7 @@ export default function App() {
         loading: false,
         data: text || 'Не вдалося згенерувати звіт.',
       });
-    } catch (error) {
+    } catch {
       setGlobalAiModal({
         isOpen: true,
         loading: false,
@@ -685,7 +685,7 @@ export default function App() {
 Якщо все ідеально (пінг < 500, статус активний) - напиши повідомлення про успішне планове оновлення системи без даунтайму.`;
 
     try {
-      const apiKey = '';
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -706,7 +706,7 @@ export default function App() {
         draftLoading: false,
         draft: text || 'Помилка генерації листа.',
       }));
-    } catch (error) {
+    } catch {
       setAiModal((prev) => ({
         ...prev,
         draftLoading: false,
