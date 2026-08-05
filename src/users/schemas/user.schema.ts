@@ -5,6 +5,9 @@ export type UserDocument = HydratedDocument<User>;
 
 @Schema({ timestamps: true, collection: 'users' })
 export class User {
+  @Prop({ default: '' })
+  avatarUrl: string;
+
   @Prop({ default: 'Користувач' })
   name: string;
 

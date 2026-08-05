@@ -18,9 +18,15 @@ export class UsersService {
     return user;
   }
 
-  async updateProfile(dto: UpdateProfileDto): Promise<UserDocument | null> {
-    const user = await this.getProfile();
-    return this.userModel.findByIdAndUpdate(user._id, dto, { new: true });
+  async findById(id: string): Promise<UserDocument | null> {
+    return this.userModel.findById(id).exec();
+  }
+
+  async updateProfile(
+    userId: string,
+    dto: UpdateProfileDto,
+  ): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(userId, dto, { new: true });
   }
 
   async findByEmail(email: string): Promise<UserDocument | null> {

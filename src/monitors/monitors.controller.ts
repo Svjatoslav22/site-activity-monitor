@@ -7,14 +7,18 @@ import {
   Param,
   Delete,
   NotFoundException,
+  UseGuards,
 } from '@nestjs/common';
 import { ChecksService } from '../checks/checks.service';
 import { MonitorsService } from './monitors.service';
 import { SchedulerService } from '../scheduler/scheduler.service';
 import { CreateMonitorDto } from './dto/create-monitor.dto';
 import { UpdateMonitorDto } from './dto/update-monitor.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
 
 @Controller('monitors')
+@UseGuards(JwtAuthGuard)
 export class MonitorsController {
   constructor(
     private readonly monitorsService: MonitorsService,
@@ -23,33 +27,47 @@ export class MonitorsController {
   ) {}
 
   @Post()
-  create(@Body() createMonitorDto: CreateMonitorDto) {
-    return this.monitorsService.create(createMonitorDto);
+  create(
+    @CurrentUser() user: { userId: string },
+    @Body() createMonitorDto: CreateMonitorDto,
+  ) {
+    return this.monitorsService.create(user.userId, createMonitorDto);
   }
 
   @Get()
-  findAll() {
-    return this.monitorsService.findAll();
+  findAll(@CurrentUser() user: { userId: string }) {
+    return this.monitorsService.findAll(user.userId);
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.monitorsService.findOne(id);
+  findOne(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
+    return this.monitorsService.findOne(id, user.userId);
   }
 
   @Get(':id/history')
-  history(@Param('id') id: string) {
+  async history(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
+    const monitor = await this.monitorsService.findOne(id, user.userId);
+    if (!monitor) {
+      throw new NotFoundException('Монітор не знайдено');
+    }
     return this.checksService.getHistory(id);
   }
 
   @Get(':id/stats')
-  stats(@Param('id') id: string) {
+  async stats(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
+    const monitor = await this.monitorsService.findOne(id, user.userId);
+    if (!monitor) {
+      throw new NotFoundException('Монітор не знайдено');
+    }
     return this.checksService.getStats(id);
   }
 
   @Post(':id/check')
-  async checkNow(@Param('id') id: string) {
-    const monitor = await this.monitorsService.findOne(id);
+  async checkNow(
+    @CurrentUser() user: { userId: string },
+    @Param('id') id: string,
+  ) {
+    const monitor = await this.monitorsService.findOne(id, user.userId);
     if (!monitor) {
       throw new NotFoundException('Монітор не знайдено');
     }
@@ -60,22 +78,26 @@ export class MonitorsController {
     return {
       ...result,
       stats,
-      monitor: await this.monitorsService.findOne(id),
+      monitor: await this.monitorsService.findOne(id, user.userId),
     };
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateMonitorDto: UpdateMonitorDto) {
-    return this.monitorsService.update(id, updateMonitorDto);
+  update(
+    @CurrentUser() user: { userId: string },
+    @Param('id') id: string,
+    @Body() updateMonitorDto: UpdateMonitorDto,
+  ) {
+    return this.monitorsService.update(id, user.userId, updateMonitorDto);
   }
 
   @Patch(':id/pause')
-  pause(@Param('id') id: string) {
-    return this.monitorsService.setActive(id, false);
+  pause(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
+    return this.monitorsService.setActive(id, user.userId, false);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.monitorsService.remove(id);
+  remove(@CurrentUser() user: { userId: string }, @Param('id') id: string) {
+    return this.monitorsService.remove(id, user.userId);
   }
 }

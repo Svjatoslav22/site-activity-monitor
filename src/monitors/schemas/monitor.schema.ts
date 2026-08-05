@@ -5,6 +5,9 @@ export type MonitorDocument = Monitor & Document;
 
 @Schema({ timestamps: true })
 export class Monitor {
+  @Prop({ required: true, type: String, index: true })
+  userId!: string;
+
   @Prop({ required: true, type: String })
   name!: string;
 

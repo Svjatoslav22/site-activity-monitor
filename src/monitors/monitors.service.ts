@@ -14,25 +14,29 @@ export class MonitorsService {
     private schedulerService: SchedulerService,
   ) {}
 
-  async create(dto: CreateMonitorDto) {
-    const monitor = await this.monitorModel.create(dto);
+  async create(userId: string, dto: CreateMonitorDto) {
+    const monitor = await this.monitorModel.create({ ...dto, userId });
     // Одразу запускаємо моніторинг для нового сайту
     this.schedulerService.startMonitor(monitor);
     return monitor;
   }
 
-  async findAll() {
-    return this.monitorModel.find();
+  async findAll(userId: string) {
+    return this.monitorModel.find({ userId }).sort({ createdAt: -1 });
   }
 
-  async findOne(id: string) {
-    return this.monitorModel.findById(id);
+  async findOne(id: string, userId: string) {
+    return this.monitorModel.findOne({ _id: id, userId });
   }
 
-  async update(id: string, dto: UpdateMonitorDto) {
-    const updated = await this.monitorModel.findByIdAndUpdate(id, dto, {
+  async update(id: string, userId: string, dto: UpdateMonitorDto) {
+    const updated = await this.monitorModel.findOneAndUpdate(
+      { _id: id, userId },
+      dto,
+      {
       new: true,
-    });
+      },
+    );
 
     if (updated) {
       // Перезапускаємо таймер, щоб застосувати новий інтервал/URL
@@ -45,14 +49,14 @@ export class MonitorsService {
     return updated;
   }
 
-  async remove(id: string) {
+  async remove(id: string, userId: string) {
     this.schedulerService.stopMonitor(id);
-    await this.monitorModel.findByIdAndDelete(id);
+    await this.monitorModel.findOneAndDelete({ _id: id, userId });
   }
 
-  async setActive(id: string, isActive: boolean) {
-    const updated = await this.monitorModel.findByIdAndUpdate(
-      id,
+  async setActive(id: string, userId: string, isActive: boolean) {
+    const updated = await this.monitorModel.findOneAndUpdate(
+      { _id: id, userId },
       { isActive },
       { new: true },
     );
