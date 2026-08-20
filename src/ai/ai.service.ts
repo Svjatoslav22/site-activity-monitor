@@ -17,6 +17,9 @@ export class AiService {
       }
 
       const apiKey = this.config.get('GEMINI_API_KEY') || '';
+      if (!apiKey) {
+        throw new InternalServerErrorException('GEMINI_API_KEY is not configured on the server');
+      }
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
       const res = await axios.post(apiUrl, payload, {
