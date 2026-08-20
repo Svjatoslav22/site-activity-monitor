@@ -429,7 +429,7 @@ export default function App() {
     }, 30000);
 
     return () => window.clearInterval(interval);
-  }, [token, setUser, setSites, setToken]);
+  }, [token]);
 
   const handleAuth = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -495,7 +495,7 @@ export default function App() {
       if (!response.ok) throw new Error('Помилка перевірки');
       await loadSites();
       showNotification('Сайт оновлено');
-    } catch {
+    } catch (error) {
       showNotification('Не вдалося оновити сайт');
     } finally {
       setRefreshingId(null);
@@ -561,7 +561,7 @@ export default function App() {
       showNotification(
         siteModal.mode === 'create' ? 'Сайт додано' : 'Сайт оновлено',
       );
-    } catch {
+    } catch (error) {
       showNotification('Не вдалося зберегти сайт');
     } finally {
       setSavingSite(false);
@@ -582,7 +582,7 @@ export default function App() {
       setDeleteTarget(null);
       await loadSites();
       showNotification('Сайт видалено');
-    } catch {
+    } catch (error) {
       showNotification('Не вдалося видалити сайт');
     } finally {
       setDeleting(false);
@@ -608,28 +608,22 @@ export default function App() {
     const systemPrompt = 'Ти досвідчений DevOps інженер та Site Reliability Expert (SRE). Відповідай чітко, структуровано, українською мовою. Використовуй формальний тон.';
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-      const response = await fetch(apiUrl, {
+      const res = await apiFetch('/api/ai/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-        }),
+        body: JSON.stringify({ prompt, systemPrompt }),
       });
-      const result = await response.json();
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!res.ok) throw new Error('AI error');
+      const data = await res.json();
       setAiModal((prev) => ({
         ...prev,
         loading: false,
-        data: text || 'Не вдалося згенерувати звіт.',
+        data: data.text || 'Не вдалося згенерувати звіт.',
       }));
-    } catch {
+    } catch (error) {
       setAiModal((prev) => ({
         ...prev,
         loading: false,
-        data: 'Виникла помилка при підключенні до Gemini API.',
+        data: 'Виникла помилка при підключенні до AI сервісу.',
       }));
     }
   };
@@ -648,29 +642,15 @@ export default function App() {
     const systemPrompt = 'Ти Chief Technology Officer (CTO). Відповідай професійно, українською мовою. Форматуй текст зручно для читання, використовуючи списки.';
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-      const response = await fetch(apiUrl, {
+      const res = await apiFetch('/api/ai/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-        }),
+        body: JSON.stringify({ prompt, systemPrompt }),
       });
-      const result = await response.json();
-      const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
-      setGlobalAiModal({
-        isOpen: true,
-        loading: false,
-        data: text || 'Не вдалося згенерувати звіт.',
-      });
-    } catch {
-      setGlobalAiModal({
-        isOpen: true,
-        loading: false,
-        data: 'Виникла помилка при підключенні до Gemini API.',
-      });
+      if (!res.ok) throw new Error('AI error');
+      const data = await res.json();
+      setGlobalAiModal({ isOpen: true, loading: false, data: data.text || 'Не вдалося згенерувати звіт.' });
+    } catch (error) {
+      setGlobalAiModal({ isOpen: true, loading: false, data: 'Виникла помилка при підключенні до AI сервісу.' });
     }
   };
 
@@ -685,7 +665,7 @@ export default function App() {
 Якщо все ідеально (пінг < 500, статус активний) - напиши повідомлення про успішне планове оновлення системи без даунтайму.`;
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const apiKey = '';
       const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -706,7 +686,7 @@ export default function App() {
         draftLoading: false,
         draft: text || 'Помилка генерації листа.',
       }));
-    } catch {
+    } catch (error) {
       setAiModal((prev) => ({
         ...prev,
         draftLoading: false,
@@ -761,33 +741,20 @@ export default function App() {
                   ['Живі дані', 'Усі монітори тягнуться з MongoDB'],
                 ].map(([title, text]) => (
                   <div
-                    key={title}
-                    className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm"
-                  >
-                    <div className="mb-2 text-sm font-bold text-slate-900">{title}</div>
-                    <div className="text-sm leading-relaxed text-slate-500">{text}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-8">
-            <div className="mb-6 flex items-center gap-3">
-              <div className="rounded-xl bg-slate-900 p-2 text-white shadow-sm">
-                <Activity size={20} strokeWidth={2.5} />
-              </div>
-              <div>
-                <div className="text-[18px] font-bold tracking-tight text-slate-900">
-                  SiteMonitor
-                </div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.26em] text-slate-400">
-                  Live Uptime Dashboard
-                </div>
-              </div>
-            </div>
-
-            <div className="mb-6 flex rounded-2xl bg-slate-100 p-1">
+                    try {
+                      const res = await apiFetch('/api/ai/generate', {
+                        method: 'POST',
+                        body: JSON.stringify({
+                          prompt,
+                          systemPrompt: "Ти фахівець зі зв'язків з громадськістю (PR) в IT компанії.",
+                        }),
+                      });
+                      if (!res.ok) throw new Error('AI error');
+                      const data = await res.json();
+                      setAiModal((prev) => ({ ...prev, draftLoading: false, draft: data.text || 'Помилка генерації листа.' }));
+                    } catch (error) {
+                      setAiModal((prev) => ({ ...prev, draftLoading: false, draft: 'Помилка генерації листа.' }));
+                    }
               <button
                 onClick={() => setAuthMode('login')}
                 className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
