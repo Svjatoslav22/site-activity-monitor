@@ -1,9 +1,10 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 
 @Injectable()
 export class AiService {
+  private readonly logger = new Logger(AiService.name);
   constructor(private config: ConfigService) {}
 
   async generate(prompt: string, systemInstruction?: string) {
@@ -29,8 +30,22 @@ export class AiService {
 
       const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
       return text || null;
-    } catch (err) {
-      throw new InternalServerErrorException('AI generation failed');
+    } catch (err: any) {
+      // Log useful details for debugging
+      this.logger.error('AI generation error', {
+        message: err?.message,
+        status: err?.response?.status,
+        responseData: err?.response?.data,
+      });
+
+      // If it's a known InternalServerErrorException thrown earlier, rethrow to preserve status
+      if (err instanceof InternalServerErrorException) {
+        throw err;
+      }
+
+      // Surface the upstream error message when available to the client for easier debugging
+      const clientMsg = err?.response?.data?.error?.message || err?.message || 'AI generation failed';
+      throw new InternalServerErrorException(`AI generation failed: ${clientMsg}`);
     }
   }
 }
