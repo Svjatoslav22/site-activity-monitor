@@ -14,19 +14,25 @@ export class AiService {
         throw new InternalServerErrorException('OPENROUTER_API_KEY is not configured on the server');
       }
       const model =
-        this.config.get('OPENROUTER_MODEL') ||
-        'meta-llama/llama-3.1-8b-instruct';
-      const messages: Array<{ role: string; content: string }> = [];
-      if (systemInstruction) {
-        messages.push({ role: 'system', content: systemInstruction });
-      }
-      messages.push({ role: 'user', content: prompt });
+        this.config.get('OPENROUTER_MODEL') || 'openai/gpt-4o-mini';
+      const languageGuard =
+        'Відповідай лише українською мовою. Пиши коротко і структуровано. Не змішуй мови, не вставляй випадкові слова, латиницю, код або уламки інших мов.';
+      const messages: Array<{ role: string; content: string }> = [
+        {
+          role: 'system',
+          content: systemInstruction
+            ? `${systemInstruction}\n\n${languageGuard}`
+            : languageGuard,
+        },
+        { role: 'user', content: prompt },
+      ];
       const res = await axios.post(
         'https://openrouter.ai/api/v1/chat/completions',
         {
           model,
           messages,
-          max_tokens: 400, // короткі відповіді = дешевше
+          temperature: 0.2,
+          max_tokens: 700,
         },
         {
           headers: {
