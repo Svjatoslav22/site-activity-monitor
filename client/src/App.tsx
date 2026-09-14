@@ -21,11 +21,6 @@ import {
   Lock,
 } from 'lucide-react';
 
-// Prevent temporary unused-variable TS errors while iterating on UI
-void Mail;
-void Shield;
-void Lock;
-
 type AuthMode = 'login' | 'register';
 
 type UserProfile = {
@@ -273,12 +268,6 @@ export default function App() {
   });
   const [authLoading, setAuthLoading] = useState(false);
   const [authError, setAuthError] = useState('');
-  // prevent unused-variable errors during iteration
-  void setAuthMode;
-  void authLoading;
-  void authError;
-  
-  // prevent unused-variable errors during iteration
 
   const [sites, setSites] = useState<Site[]>([]);
   const [isLoadingSites, setIsLoadingSites] = useState(false);
@@ -488,8 +477,6 @@ export default function App() {
       setAuthLoading(false);
     }
   };
-  // keep reference to avoid TS6133 while simplified UI is in place
-  void handleAuth;
 
   const handleLogout = () => {
     localStorage.removeItem(AUTH_STORAGE_KEY);
@@ -717,8 +704,158 @@ export default function App() {
 
   if (!token || !user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="rounded-lg border p-8 bg-white">Будь ласка, увійдіть</div>
+      <div className="min-h-screen bg-gradient-to-br from-red-50 via-slate-50 to-emerald-50 text-slate-800 selection:bg-indigo-100">
+        <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr]">
+          <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/60 p-8 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-xl lg:p-10">
+            <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-emerald-200/40 blur-3xl" />
+            <div className="absolute -bottom-16 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
+            <div className="relative">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-emerald-700">
+                <Shield size={13} />
+                AI Site Monitor
+              </div>
+              <h1 className="max-w-xl text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
+                Персональний моніторинг сайтів з AI-звітами та доступом по акаунту.
+              </h1>
+              <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
+                Реєструйтесь, додавайте власні сайти, отримуйте індивідуальну історію перевірок і керуйте станом сервісів із єдиного дашборду.
+              </p>
+
+              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+                {[
+                  ['Окремі акаунти', 'Кожен користувач бачить лише свої сайти'],
+                  ['AI-аналіз', 'Генерація звіту та чернеток повідомлень'],
+                  ['Живі дані', 'Усі монітори тягнуться з MongoDB'],
+                ].map(([title, text]) => (
+                  <div
+                    key={title}
+                    className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm"
+                  >
+                    <div className="mb-2 text-sm font-bold text-slate-900">{title}</div>
+                    <div className="text-sm leading-relaxed text-slate-500">{text}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-8">
+            <div className="mb-6 flex items-center gap-3">
+              <div className="rounded-xl bg-slate-900 p-2 text-white shadow-sm">
+                <Activity size={20} strokeWidth={2.5} />
+              </div>
+              <div>
+                <div className="text-[18px] font-bold tracking-tight text-slate-900">
+                  SiteMonitor
+                </div>
+                <div className="text-[11px] font-bold uppercase tracking-[0.26em] text-slate-400">
+                  Live Uptime Dashboard
+                </div>
+              </div>
+            </div>
+
+            <div className="mb-6 flex rounded-2xl bg-slate-100 p-1">
+              <button
+                type="button"
+                onClick={() => setAuthMode('login')}
+                className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                  authMode === 'login'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500'
+                }`}
+              >
+                Увійти
+              </button>
+              <button
+                type="button"
+                onClick={() => setAuthMode('register')}
+                className={`flex-1 rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                  authMode === 'register'
+                    ? 'bg-white text-slate-900 shadow-sm'
+                    : 'text-slate-500'
+                }`}
+              >
+                Зареєструватись
+              </button>
+            </div>
+
+            <form onSubmit={handleAuth} className="space-y-3">
+              {authMode === 'register' && (
+                <div className="relative">
+                  <User
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+                  <input
+                    value={authForm.name}
+                    onChange={(event) =>
+                      setAuthForm({ ...authForm, name: event.target.value })
+                    }
+                    placeholder="Ваше ім'я"
+                    className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-10 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                  />
+                </div>
+              )}
+
+              <div className="relative">
+                <Mail
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="email"
+                  value={authForm.email}
+                  onChange={(event) =>
+                    setAuthForm({ ...authForm, email: event.target.value })
+                  }
+                  placeholder="Email"
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-10 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                />
+              </div>
+
+              <div className="relative">
+                <Lock
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+                <input
+                  type="password"
+                  value={authForm.password}
+                  onChange={(event) =>
+                    setAuthForm({ ...authForm, password: event.target.value })
+                  }
+                  placeholder="Пароль"
+                  required
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50/70 px-10 py-3 text-sm outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                />
+              </div>
+
+              {authError && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {authError}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                disabled={authLoading}
+                className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition-all hover:bg-slate-800 active:scale-[0.99] disabled:opacity-60"
+              >
+                {authLoading ? (
+                  <Loader2 size={16} className="animate-spin" />
+                ) : (
+                  <CheckCircle2 size={16} />
+                )}
+                {authMode === 'register' ? 'Створити акаунт' : 'Увійти'}
+              </button>
+            </form>
+
+            <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-sm text-slate-500">
+              Після входу ви зможете додавати сайти, а дашборд покаже тільки ваші записи з бази даних.
+            </div>
+          </section>
+        </div>
       </div>
     );
   }
