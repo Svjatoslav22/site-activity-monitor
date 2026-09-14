@@ -9,7 +9,7 @@ export default defineConfig({
     proxy: {
       // Вказуємо, що всі запити, які починаються з /api, треба відправляти на бекенд
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'http://localhost:4000',
         changeOrigin: true,
       },
     },

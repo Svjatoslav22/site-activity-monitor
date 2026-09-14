@@ -5,31 +5,40 @@ import axios from 'axios';
 @Injectable()
 export class AiService {
   private readonly logger = new Logger(AiService.name);
-  constructor(private config: ConfigService) {}
+  constructor(private config: ConfigService) { }
 
   async generate(prompt: string, systemInstruction?: string) {
     try {
-      const payload: any = {
-        contents: [{ parts: [{ text: prompt }] }],
-      };
-
-      if (systemInstruction) {
-        payload.systemInstruction = { parts: [{ text: systemInstruction }] };
-      }
-
-      const apiKey = this.config.get('GEMINI_API_KEY') || '';
+      const apiKey = this.config.get('OPENROUTER_API_KEY') || '';
       if (!apiKey) {
-        throw new InternalServerErrorException('GEMINI_API_KEY is not configured on the server');
+        throw new InternalServerErrorException('OPENROUTER_API_KEY is not configured on the server');
       }
-      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-
-      const res = await axios.post(apiUrl, payload, {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 20000,
-      });
-
-      const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      return text || null;
+      const model =
+        this.config.get('OPENROUTER_MODEL') ||
+        'meta-llama/llama-3.1-8b-instruct';
+      const messages: Array<{ role: string; content: string }> = [];
+      if (systemInstruction) {
+        messages.push({ role: 'system', content: systemInstruction });
+      }
+      messages.push({ role: 'user', content: prompt });
+      const res = await axios.post(
+        'https://openrouter.ai/api/v1/chat/completions',
+        {
+          model,
+          messages,
+          max_tokens: 400, // короткі відповіді = дешевше
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://site-activity-monitor.vercel.app',
+            'X-Title': 'SiteMonitor',
+          },
+          timeout: 20000,
+        },
+      );
+      return res.data?.choices?.[0]?.message?.content || null;
     } catch (err: any) {
       // Log useful details for debugging
       this.logger.error('AI generation error', {
