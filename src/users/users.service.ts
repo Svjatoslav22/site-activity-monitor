@@ -33,6 +33,33 @@ export class UsersService {
     return this.userModel.findOne({ email }).select('+password').exec();
   }
 
+  async findByTelegramChatId(chatId: string): Promise<UserDocument | null> {
+    if (!chatId) return null;
+    return this.userModel.findOne({ telegramChatId: chatId.toString() }).exec();
+  }
+
+  async linkTelegram(
+    userId: string,
+    chatId: string,
+    username?: string,
+  ): Promise<UserDocument | null> {
+    const updateData: Partial<User> = {
+      telegramChatId: chatId.toString(),
+    };
+    if (username) {
+      updateData.telegramUsername = username.replace(/^@/, '');
+    }
+    return this.userModel.findByIdAndUpdate(userId, updateData, { new: true });
+  }
+
+  async disconnectTelegram(userId: string): Promise<UserDocument | null> {
+    return this.userModel.findByIdAndUpdate(
+      userId,
+      { telegramChatId: '', telegramUsername: '' },
+      { new: true },
+    );
+  }
+
   async createUser(data: Partial<User>): Promise<UserDocument> {
     return this.userModel.create(data as any);
   }

@@ -17,6 +17,9 @@ export class User {
   @Prop({ default: '' })
   telegramUsername: string;
 
+  @Prop({ default: '', index: true })
+  telegramChatId: string;
+
   @Prop({ default: '', select: false })
   password?: string;
 
