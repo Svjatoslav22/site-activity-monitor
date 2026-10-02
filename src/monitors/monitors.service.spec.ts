@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getModelToken } from '@nestjs/mongoose';
 import { MonitorsService } from './monitors.service';
 import { Monitor } from './schemas/monitor.schema';
+import { SchedulerService } from '../scheduler/scheduler.service';
 
 describe('MonitorsService', () => {
   let service: MonitorsService;
@@ -18,6 +19,13 @@ describe('MonitorsService', () => {
             findById: jest.fn(),
             findByIdAndUpdate: jest.fn(),
             findByIdAndDelete: jest.fn(),
+          },
+        },
+        {
+          provide: SchedulerService,
+          useValue: {
+            startMonitor: jest.fn(),
+            stopMonitor: jest.fn(),
           },
         },
       ],

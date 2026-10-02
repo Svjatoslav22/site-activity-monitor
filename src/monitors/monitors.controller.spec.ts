@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { MonitorsController } from './monitors.controller';
 import { MonitorsService } from './monitors.service';
 import { ChecksService } from '../checks/checks.service';
+import { SchedulerService } from '../scheduler/scheduler.service';
 
 describe('MonitorsController', () => {
   let controller: MonitorsController;
@@ -26,6 +27,12 @@ describe('MonitorsController', () => {
           useValue: {
             getHistory: jest.fn(),
             getStats: jest.fn(),
+          },
+        },
+        {
+          provide: SchedulerService,
+          useValue: {
+            runCheckForMonitor: jest.fn(),
           },
         },
       ],
