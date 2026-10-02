@@ -71,6 +71,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
         monitor.url,
         result.error || "Помилка з'єднання",
         result.responseTime,
+        monitor.userId,
       );
     }
 
@@ -83,6 +84,7 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
         monitor.name,
         monitor.url,
         result.responseTime,
+        monitor.userId,
       );
     }
 
