@@ -7,7 +7,17 @@ export default function Navbar() {
   const sendTelegramTest = async () => {
     try {
       setIsTesting(true);
-      const response = await fetch('/api/telegram/test', { method: 'POST' });
+      const auth = localStorage.getItem('site-monitor-auth');
+      let token = '';
+      if (auth) {
+        try {
+          token = JSON.parse(auth).token || '';
+        } catch {}
+      }
+      const response = await fetch('/api/telegram/test', {
+        method: 'POST',
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
       const data = await response.json();
       alert(data.ok ? '✅ ' + data.message : '❌ ' + data.message);
       // eslint-disable-next-line @typescript-eslint/no-unused-vars

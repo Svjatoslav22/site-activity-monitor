@@ -24,9 +24,12 @@ import {
 type AuthMode = 'login' | 'register';
 
 type UserProfile = {
-  id: string;
+  id?: string;
+  _id?: string;
   email: string;
   name?: string;
+  telegramChatId?: string;
+  telegramUsername?: string;
 };
 
 type MonitorApiItem = {
@@ -316,6 +319,11 @@ export default function App() {
     data: '',
   });
 
+  const [telegramModalOpen, setTelegramModalOpen] = useState(false);
+  const [isSendingTelegramTest, setIsSendingTelegramTest] = useState(false);
+  const [manualChatId, setManualChatId] = useState('');
+  const [isConnectingTelegram, setIsConnectingTelegram] = useState(false);
+
   const showNotification = (message: string) => {
     setToast(message);
     window.setTimeout(() => setToast(''), 3000);
@@ -330,7 +338,14 @@ export default function App() {
       headers.set('Content-Type', 'application/json');
     }
 
-    return fetch(input, { ...init, headers });
+    const response = await fetch(input, { ...init, headers });
+    if (response.status === 401 && token) {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      setToken('');
+      setUser(null);
+      setSites([]);
+    }
+    return response;
   };
 
   const loadProfile = async (currentToken: string) => {
@@ -344,6 +359,84 @@ export default function App() {
 
     const profile = (await response.json()) as UserProfile;
     setUser(profile);
+  };
+
+  const handleTelegramTest = async () => {
+    if (!token) return;
+    if (!user?.telegramChatId) {
+      setTelegramModalOpen(true);
+      showNotification('Спочатку підключіть Telegram');
+      return;
+    }
+
+    try {
+      setIsSendingTelegramTest(true);
+      const res = await apiFetch('/api/telegram/test', {
+        method: 'POST',
+      });
+      const data = (await res.json()) as { ok?: boolean; message?: string };
+      if (res.ok && data.ok) {
+        showNotification('🔔 Тестове повідомлення надіслано у ваш Telegram!');
+      } else {
+        showNotification(data.message || 'Не вдалося надіслати повідомлення');
+        if (!data.ok) {
+          setTelegramModalOpen(true);
+        }
+      }
+    } catch {
+      showNotification("Помилка зв'язку з сервером Telegram");
+    } finally {
+      setIsSendingTelegramTest(false);
+    }
+  };
+
+  const handleConnectChatId = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualChatId.trim()) return;
+
+    try {
+      setIsConnectingTelegram(true);
+      const res = await apiFetch('/api/telegram/connect', {
+        method: 'POST',
+        body: JSON.stringify({ chatId: manualChatId.trim() }),
+      });
+      const data = (await res.json()) as { ok?: boolean; message?: string };
+      if (res.ok && data.ok) {
+        showNotification('✅ Telegram успішно підключено!');
+        setManualChatId('');
+        if (token) await loadProfile(token);
+      } else {
+        showNotification(data.message || 'Помилка підключення Chat ID');
+      }
+    } catch {
+      showNotification('Не вдалося зберегти Chat ID');
+    } finally {
+      setIsConnectingTelegram(false);
+    }
+  };
+
+  const handleDisconnectTelegram = async () => {
+    try {
+      setIsConnectingTelegram(true);
+      const res = await apiFetch('/api/telegram/disconnect', {
+        method: 'POST',
+      });
+      if (res.ok) {
+        showNotification('Telegram відключено');
+        if (token) await loadProfile(token);
+      }
+    } catch {
+      showNotification('Не вдалося відключити Telegram');
+    } finally {
+      setIsConnectingTelegram(false);
+    }
+  };
+
+  const refreshTelegramStatus = async () => {
+    if (token) {
+      await loadProfile(token);
+      showNotification("Статус підключення оновлено");
+    }
   };
 
   const loadSites = async () => {
@@ -418,19 +511,34 @@ export default function App() {
       return;
     }
 
-    void loadProfile(token).catch(() => {
-      localStorage.removeItem(AUTH_STORAGE_KEY);
-      setToken('');
-      setUser(null);
-    });
+    let isMounted = true;
 
-    void loadSites();
+    const initUserData = async () => {
+      try {
+        await loadProfile(token);
+        if (isMounted) {
+          await loadSites();
+        }
+      } catch {
+        if (isMounted) {
+          localStorage.removeItem(AUTH_STORAGE_KEY);
+          setToken('');
+          setUser(null);
+          setSites([]);
+        }
+      }
+    };
+
+    void initUserData();
 
     const interval = window.setInterval(() => {
       void loadSites();
     }, 30000);
 
-    return () => window.clearInterval(interval);
+    return () => {
+      isMounted = false;
+      window.clearInterval(interval);
+    };
   }, [token]);
 
   const handleAuth = async (event: React.FormEvent) => {
@@ -891,25 +999,68 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden items-center gap-3 md:flex">
-              <div className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white/50 px-3 py-1.5 text-sm shadow-sm">
-                <Send size={15} className="text-slate-400" />
-                <div className="flex flex-col leading-tight">
-                  <span className="text-[13px] font-medium text-slate-700">
+            <div className="hidden items-center gap-2 md:flex">
+              <button
+                type="button"
+                onClick={() => setTelegramModalOpen(true)}
+                title="Налаштування Telegram сповіщень"
+                className={`group flex items-center gap-2 rounded-xl border px-3 py-1.5 text-sm shadow-sm transition-all hover:shadow active:scale-95 ${
+                  user?.telegramChatId
+                    ? 'border-emerald-200/80 bg-emerald-50/50 hover:bg-emerald-50'
+                    : 'border-slate-200 bg-white/70 hover:bg-white'
+                }`}
+              >
+                <Send
+                  size={15}
+                  className={user?.telegramChatId ? 'text-emerald-500' : 'text-slate-400'}
+                />
+                <div className="flex flex-col text-left leading-tight">
+                  <span className="text-[12px] font-semibold text-slate-700">
                     Telegram
                   </span>
-                  <div className="flex items-center gap-1 text-[10px] font-semibold text-emerald-500">
-                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
-                    Підключено
+                  <div
+                    className={`flex items-center gap-1 text-[10px] font-bold ${
+                      user?.telegramChatId ? 'text-emerald-600' : 'text-amber-500'
+                    }`}
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        user?.telegramChatId
+                          ? 'animate-pulse bg-emerald-500'
+                          : 'bg-amber-400'
+                      }`}
+                    />
+                    {user?.telegramChatId ? 'Підключено' : 'Не підключено'}
                   </div>
                 </div>
-              </div>
-              <button
-                onClick={() => showNotification('Тестове повідомлення надіслано в Telegram')}
-                className="ml-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 transition-all hover:text-slate-800 hover:shadow-sm active:scale-95"
-              >
-                Тест
               </button>
+
+              {user?.telegramChatId ? (
+                <button
+                  type="button"
+                  onClick={handleTelegramTest}
+                  disabled={isSendingTelegramTest}
+                  title="Надіслати тестове повідомлення у ваш Telegram"
+                  className="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 transition-all hover:bg-slate-50 hover:shadow-sm active:scale-95 disabled:opacity-50"
+                >
+                  {isSendingTelegramTest ? (
+                    <span className="flex items-center gap-1">
+                      <Loader2 size={12} className="animate-spin" />
+                      Тест
+                    </span>
+                  ) : (
+                    'Тест'
+                  )}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setTelegramModalOpen(true)}
+                  className="rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:from-blue-700 hover:to-indigo-700 active:scale-95"
+                >
+                  Підключити
+                </button>
+              )}
             </div>
 
             <div className="hidden h-6 w-px bg-slate-200 md:block" />
@@ -938,13 +1089,33 @@ export default function App() {
                 <div className="animate-in fade-in zoom-in-95 absolute right-0 z-50 mt-3 w-72 rounded-2xl border border-slate-100 bg-white/95 p-1 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] backdrop-blur-xl duration-200">
                   <div className="border-b border-slate-100/50 px-4 py-3">
                     <p className="text-[14px] font-bold text-slate-800">
-                      {user?.name || 'Admin User'}
+                      {user?.name || 'Користувач'}
                     </p>
                     <p className="truncate text-[12px] font-medium text-slate-400">
-                      {user?.email || 'admin@sitemonitor.com'}
+                      {user?.email || ''}
                     </p>
                   </div>
                   <div className="py-1">
+                    <button
+                      onClick={() => {
+                        setShowProfileMenu(false);
+                        setTelegramModalOpen(true);
+                      }}
+                      className="flex w-full items-center justify-between rounded-lg px-4 py-2.5 text-left text-[13px] font-semibold text-slate-600 transition-colors hover:bg-slate-50/80 hover:text-indigo-600"
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Send size={16} strokeWidth={2} /> Telegram сповіщення
+                      </span>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          user?.telegramChatId
+                            ? 'bg-emerald-50 text-emerald-600'
+                            : 'bg-amber-50 text-amber-600'
+                        }`}
+                      >
+                        {user?.telegramChatId ? 'Підключено' : 'Підключити'}
+                      </span>
+                    </button>
                     <button
                       onClick={() => {
                         showNotification('Відкрито: Мій профіль');
@@ -1385,6 +1556,213 @@ export default function App() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {telegramModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 p-4 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="w-full max-w-lg overflow-hidden rounded-3xl border border-slate-100 bg-white shadow-2xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-slate-100 bg-gradient-to-r from-blue-50/60 via-indigo-50/40 to-slate-50/60 px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="rounded-xl bg-blue-500 p-2 text-white shadow-sm shadow-blue-500/20">
+                  <Send size={18} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-slate-800">
+                    Telegram сповіщення
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Персональні сповіщення для вашого облікового запису
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setTelegramModalOpen(false)}
+                className="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 active:scale-95"
+              >
+                <Plus size={20} className="rotate-45" />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-5">
+              {/* Connection Status Card */}
+              <div
+                className={`rounded-2xl border p-4 transition-all ${
+                  user?.telegramChatId
+                    ? 'border-emerald-200 bg-emerald-50/60 text-emerald-950'
+                    : 'border-amber-200 bg-amber-50/50 text-amber-950'
+                }`}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <span
+                      className={`h-2.5 w-2.5 rounded-full ${
+                        user?.telegramChatId
+                          ? 'animate-pulse bg-emerald-500'
+                          : 'bg-amber-400'
+                      }`}
+                    />
+                    <span className="text-sm font-bold">
+                      {user?.telegramChatId
+                        ? 'Telegram успішно підключено'
+                        : 'Telegram ще не підключено'}
+                    </span>
+                  </div>
+                  {user?.telegramChatId && (
+                    <button
+                      onClick={handleDisconnectTelegram}
+                      disabled={isConnectingTelegram}
+                      className="text-xs font-semibold text-rose-600 hover:text-rose-700 hover:underline disabled:opacity-50"
+                    >
+                      Відключити
+                    </button>
+                  )}
+                </div>
+
+                {user?.telegramChatId ? (
+                  <div className="mt-2 text-xs text-slate-600 space-y-1">
+                    <p>
+                      <strong>Chat ID:</strong>{' '}
+                      <code className="rounded bg-white/80 px-1.5 py-0.5 font-mono text-slate-800 border border-emerald-100">
+                        {user.telegramChatId}
+                      </code>
+                    </p>
+                    {user.telegramUsername && (
+                      <p>
+                        <strong>Username:</strong> @{user.telegramUsername}
+                      </p>
+                    )}
+                    <p className="pt-1 text-[11px] text-emerald-700">
+                      Сповіщення про падіння та відновлення сайтів будуть автоматично надходити в цей чат.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="mt-1.5 text-xs text-amber-700 leading-relaxed">
+                    Підключіть Telegram, щоб отримувати миттєві персональні алерти на смартфон, коли ваш сайт стає недоступним.
+                  </p>
+                )}
+              </div>
+
+              {/* Options to connect */}
+              {!user?.telegramChatId ? (
+                <div className="space-y-4">
+                  {/* Option 1: Fast One-Click Link */}
+                  <div className="rounded-2xl border border-indigo-100 bg-indigo-50/40 p-4 transition-all hover:bg-indigo-50/60">
+                    <div className="mb-2 flex items-center justify-between">
+                      <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2.5 py-0.5 text-[11px] font-bold text-indigo-700">
+                        <Sparkles size={11} /> Спосіб 1: В один клік (Рекомендовано)
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-600 leading-relaxed mb-3">
+                      Натисніть кнопку нижче — відкриється офіційний бот <strong>@pocketnote2vbot</strong>. Натисніть <strong>«Start»</strong> у чаті, і ваш акаунт прив'яжеться автоматично!
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      <a
+                        href={`https://t.me/pocketnote2vbot?start=link_${user?.id || user?._id || ''}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20 transition-all hover:from-blue-600 hover:to-indigo-700 active:scale-95"
+                      >
+                        <Send size={14} />
+                        Відкрити @pocketnote2vbot у Telegram
+                        <ExternalLink size={12} />
+                      </a>
+                      <button
+                        onClick={refreshTelegramStatus}
+                        className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 active:scale-95 shadow-sm"
+                      >
+                        <RefreshCw size={12} />
+                        Оновити статус
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Option 2: Manual Chat ID */}
+                  <div className="rounded-2xl border border-slate-100 bg-slate-50/50 p-4">
+                    <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider block mb-2">
+                      Спосіб 2: Ввести Telegram Chat ID вручну
+                    </span>
+                    <form onSubmit={handleConnectChatId} className="space-y-2.5">
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={manualChatId}
+                          onChange={(e) => setManualChatId(e.target.value)}
+                          placeholder="Ваш Chat ID (наприклад 1795893529)"
+                          className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2 text-xs outline-none transition-all placeholder:text-slate-400 focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                        />
+                        <button
+                          type="submit"
+                          disabled={!manualChatId.trim() || isConnectingTelegram}
+                          className="rounded-xl bg-slate-900 px-4 py-2 text-xs font-semibold text-white transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-40"
+                        >
+                          {isConnectingTelegram ? (
+                            <Loader2 size={14} className="animate-spin" />
+                          ) : (
+                            'Прив\'язати'
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-[11px] text-slate-400">
+                        💡 Дізнатися свій Chat ID можна, написавши <code>/start</code> боту{' '}
+                        <a
+                          href="https://t.me/pocketnote2vbot"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-indigo-600 underline font-medium"
+                        >
+                          @pocketnote2vbot
+                        </a>{' '}
+                        або{' '}
+                        <a
+                          href="https://t.me/userinfobot"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-indigo-600 underline font-medium"
+                        >
+                          @userinfobot
+                        </a>.
+                      </p>
+                    </form>
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-2xl border border-emerald-100 bg-emerald-50/30 p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-700">
+                      Перевірка роботи сповіщень
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed">
+                    Натисніть кнопку нижче, щоб відправити тестове сповіщення прямо у ваш прив'язаний Telegram-чат.
+                  </p>
+                  <button
+                    onClick={handleTelegramTest}
+                    disabled={isSendingTelegramTest}
+                    className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-600 px-4 py-2.5 text-xs font-bold text-white shadow-md shadow-indigo-500/20 transition-all hover:from-blue-600 hover:to-indigo-700 active:scale-95 disabled:opacity-50"
+                  >
+                    {isSendingTelegramTest ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Send size={14} />
+                    )}
+                    Надіслати тестове повідомлення в Telegram
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex justify-end border-t border-slate-100 bg-slate-50/50 px-6 py-3.5">
+              <button
+                onClick={() => setTelegramModalOpen(false)}
+                className="rounded-xl bg-slate-900 px-5 py-2 text-xs font-semibold text-white transition-all hover:bg-slate-800 active:scale-95"
+              >
+                Закрити
+              </button>
+            </div>
           </div>
         </div>
       )}
