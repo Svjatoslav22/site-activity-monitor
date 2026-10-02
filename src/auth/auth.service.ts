@@ -13,14 +13,24 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
-    const existing = await this.usersService.findByEmail(dto.email);
-    if (existing) throw new BadRequestException('Email already in use');
+    const email = dto.email?.trim().toLowerCase();
+    if (!email || !dto.password) {
+      throw new BadRequestException('Будь ласка, заповніть email та пароль');
+    }
+    if (dto.password.length < 4) {
+      throw new BadRequestException('Пароль має містити щонайменше 4 символи');
+    }
+
+    const existing = await this.usersService.findByEmail(email);
+    if (existing) {
+      throw new BadRequestException('Користувач із такою електронною поштою вже зареєстрований');
+    }
 
     const hashed = await bcrypt.hash(dto.password, 10);
     const user = await this.usersService.createUser({
-      email: dto.email,
+      email,
       password: hashed,
-      name: dto.name || 'Користувач',
+      name: dto.name?.trim() || 'Користувач',
     } as any);
 
     const payload = { sub: user._id, email: user.email };
@@ -35,7 +45,8 @@ export class AuthService {
   }
 
   async validateUser(email: string, password: string) {
-    const user = await this.usersService.findByEmail(email);
+    const normalizedEmail = email?.trim().toLowerCase();
+    const user = await this.usersService.findByEmail(normalizedEmail);
     if (!user || !user.password) return null;
     const passMatches = await bcrypt.compare(password, (user as any).password);
     if (!passMatches) return null;
@@ -43,8 +54,15 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
-    const user = await this.validateUser(dto.email, dto.password);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    const email = dto.email?.trim().toLowerCase();
+    if (!email || !dto.password) {
+      throw new BadRequestException('Будь ласка, введіть email та пароль');
+    }
+
+    const user = await this.validateUser(email, dto.password);
+    if (!user) {
+      throw new UnauthorizedException('Невірний email або пароль');
+    }
     const payload = { sub: user._id, email: user.email };
     return {
       access_token: this.jwtService.sign(payload),
@@ -52,6 +70,8 @@ export class AuthService {
         id: user._id,
         email: user.email,
         name: user.name,
+        telegramChatId: (user as any).telegramChatId,
+        telegramUsername: (user as any).telegramUsername,
       },
     };
   }
