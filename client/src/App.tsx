@@ -19,6 +19,7 @@ import {
   User,
   CheckCircle2,
   Lock,
+  AlertCircle,
 } from 'lucide-react';
 
 type AuthMode = 'login' | 'register';
@@ -445,6 +446,7 @@ export default function App() {
     try {
       setIsLoadingSites(true);
       const response = await apiFetch('/api/monitors');
+      if (response.status === 401) return;
       if (!response.ok) throw new Error('Помилка сервера');
 
       const monitorsData = (await response.json()) as MonitorApiItem[];
@@ -1768,8 +1770,22 @@ export default function App() {
       )}
 
       {toast && (
-        <div className="fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-xl border border-slate-200 bg-white/90 px-4 py-3 text-slate-800 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] backdrop-blur-md">
-          <CheckCircle2 size={18} className="text-emerald-500" />
+        <div
+          className={`fixed bottom-6 right-6 z-50 flex items-center gap-3 rounded-2xl border px-4 py-3 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.15)] backdrop-blur-md animate-in fade-in duration-200 ${
+            toast.toLowerCase().includes('помилка') ||
+            toast.toLowerCase().includes('не ') ||
+            toast.toLowerCase().includes('не вдалося')
+              ? 'border-rose-200 bg-white/95 text-rose-800'
+              : 'border-slate-200 bg-white/95 text-slate-800'
+          }`}
+        >
+          {toast.toLowerCase().includes('помилка') ||
+          toast.toLowerCase().includes('не ') ||
+          toast.toLowerCase().includes('не вдалося') ? (
+            <AlertCircle size={18} className="text-rose-500 shrink-0" />
+          ) : (
+            <CheckCircle2 size={18} className="text-emerald-500 shrink-0" />
+          )}
           <span className="pr-2 text-[13px] font-semibold">{toast}</span>
         </div>
       )}
