@@ -827,23 +827,23 @@ export default function App() {
   if (!token || !user) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-red-50 via-slate-50 to-emerald-50 text-slate-800 selection:bg-indigo-100">
-        <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-10 px-6 py-10 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/60 p-8 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-xl lg:p-10">
+        <div className="mx-auto grid min-h-screen max-w-6xl items-center gap-6 px-6 py-6 lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 lg:py-8">
+          <section className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/60 p-6 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-7 lg:p-8">
             <div className="absolute -right-20 -top-24 h-64 w-64 rounded-full bg-emerald-200/40 blur-3xl" />
             <div className="absolute -bottom-16 -left-24 h-72 w-72 rounded-full bg-indigo-200/40 blur-3xl" />
             <div className="relative">
-              <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-emerald-700">
+              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.3em] text-emerald-700">
                 <Shield size={13} />
                 AI Site Monitor
               </div>
-              <h1 className="max-w-xl text-4xl font-black tracking-tight text-slate-900 sm:text-5xl">
+              <h1 className="max-w-xl text-2xl font-black tracking-tight text-slate-900 sm:text-3xl lg:text-[2.1rem] lg:leading-tight">
                 Персональний моніторинг сайтів з AI-звітами та доступом по акаунту.
               </h1>
-              <p className="mt-5 max-w-xl text-base leading-relaxed text-slate-600">
+              <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-base">
                 Реєструйтесь, додавайте власні сайти, отримуйте індивідуальну історію перевірок і керуйте станом сервісів із єдиного дашборду.
               </p>
 
-              <div className="mt-8 grid gap-4 sm:grid-cols-3">
+              <div className="mt-5 grid gap-3 sm:grid-cols-3">
                 {[
                   ['Окремі акаунти', 'Кожен користувач бачить лише свої сайти'],
                   ['AI-аналіз', 'Генерація звіту та чернеток повідомлень'],
@@ -851,32 +851,32 @@ export default function App() {
                 ].map(([title, text]) => (
                   <div
                     key={title}
-                    className="rounded-2xl border border-white/70 bg-white/70 p-4 shadow-sm"
+                    className="rounded-2xl border border-white/70 bg-white/70 p-3 sm:p-3.5 shadow-sm"
                   >
-                    <div className="mb-2 text-sm font-bold text-slate-900">{title}</div>
-                    <div className="text-sm leading-relaxed text-slate-500">{text}</div>
+                    <div className="mb-1 text-xs font-bold text-slate-900 sm:text-sm">{title}</div>
+                    <div className="text-xs leading-relaxed text-slate-500">{text}</div>
                   </div>
                 ))}
               </div>
             </div>
           </section>
 
-          <section className="rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-8">
-            <div className="mb-6 flex items-center gap-3">
+          <section className="rounded-[2rem] border border-white/70 bg-white/75 p-6 shadow-[0_24px_80px_-32px_rgba(15,23,42,0.35)] backdrop-blur-xl sm:p-7 lg:p-8">
+            <div className="mb-5 flex items-center gap-3">
               <div className="rounded-xl bg-slate-900 p-2 text-white shadow-sm">
                 <Activity size={20} strokeWidth={2.5} />
               </div>
               <div>
-                <div className="text-[18px] font-bold tracking-tight text-slate-900">
+                <div className="text-[17px] font-bold tracking-tight text-slate-900">
                   SiteMonitor
                 </div>
-                <div className="text-[11px] font-bold uppercase tracking-[0.26em] text-slate-400">
+                <div className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-400">
                   Live Uptime Dashboard
                 </div>
               </div>
             </div>
 
-            <div className="mb-6 flex rounded-2xl bg-slate-100 p-1">
+            <div className="mb-5 flex rounded-2xl bg-slate-100 p-1">
               <button
                 type="button"
                 onClick={() => setAuthMode('login')}
@@ -973,7 +973,7 @@ export default function App() {
               </button>
             </form>
 
-            <div className="mt-6 rounded-2xl border border-slate-100 bg-slate-50/70 p-4 text-sm text-slate-500">
+            <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3 text-xs text-slate-500 sm:text-sm">
               Після входу ви зможете додавати сайти, а дашборд покаже тільки ваші записи з бази даних.
             </div>
           </section>
