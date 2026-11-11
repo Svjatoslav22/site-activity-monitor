@@ -5,7 +5,7 @@ export type CheckDocument = Check & Document;
 
 @Schema({ timestamps: true })
 export class Check {
-  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Monitor', required: true })
+  @Prop({ type: MongooseSchema.Types.ObjectId, ref: 'Monitor', required: true, index: true })
   monitorId!: string;
 
   @Prop({ required: true, type: String })
@@ -22,3 +22,4 @@ export class Check {
 }
 
 export const CheckSchema = SchemaFactory.createForClass(Check);
+CheckSchema.index({ monitorId: 1, createdAt: -1 });

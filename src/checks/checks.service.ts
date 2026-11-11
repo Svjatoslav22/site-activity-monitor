@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import axios from 'axios';
 import { Check, CheckDocument } from './schemas/check.schema';
 import { Monitor, MonitorDocument } from '../monitors/schemas/monitor.schema';
@@ -73,22 +73,32 @@ export class ChecksService {
   }
 
   async getStats(monitorId: string) {
-    const totalChecks = await this.checkModel.countDocuments({ monitorId });
-    const upChecks = await this.checkModel.countDocuments({
-      monitorId,
-      status: 'up',
-    });
+    const objectId = Types.ObjectId.isValid(monitorId)
+      ? new Types.ObjectId(monitorId)
+      : monitorId;
 
-    const latestCheck = await this.checkModel
-      .findOne({ monitorId })
-      .sort({ createdAt: -1 });
-
-    const avgResult = await this.checkModel.aggregate<{ avg: number }>([
-      { $match: { monitorId, status: 'up', responseTime: { $gt: 0 } } },
-      { $group: { _id: null, avg: { $avg: '$responseTime' } } },
-    ]);
-
-    const monitor = await this.monitorModel.findById(monitorId);
+    const [totalChecks, upChecks, latestCheck, avgResult, monitor] =
+      await Promise.all([
+        this.checkModel.countDocuments({ monitorId }),
+        this.checkModel.countDocuments({
+          monitorId,
+          status: 'up',
+        }),
+        this.checkModel
+          .findOne({ monitorId })
+          .sort({ createdAt: -1 }),
+        this.checkModel.aggregate<{ avg: number }>([
+          {
+            $match: {
+              monitorId: objectId,
+              status: 'up',
+              responseTime: { $gt: 0 },
+            },
+          },
+          { $group: { _id: null, avg: { $avg: '$responseTime' } } },
+        ]),
+        this.monitorModel.findById(monitorId),
+      ]);
 
     const uptimePercentage =
       totalChecks === 0
