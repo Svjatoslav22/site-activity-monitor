@@ -57,9 +57,10 @@ export class SchedulerService implements OnModuleInit, OnModuleDestroy {
     this.intervals.set(monitorId, intervalId);
   }
 
-  async runCheckForMonitor(monitorId: string) {
+  async runCheckForMonitor(monitorId: string, force = false) {
     const monitor = await this.monitorModel.findById(monitorId);
-    if (!monitor || !monitor.isActive) return;
+    if (!monitor) return;
+    if (!monitor.isActive && !force) return;
 
     this.logger.debug(`[${monitor.name}] Пінгуємо: ${monitor.url}`);
 

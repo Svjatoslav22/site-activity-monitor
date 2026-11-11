@@ -19,7 +19,11 @@ export class ChecksService {
     let errorMsg: string | null = null;
 
     try {
-      const response = await axios.get(monitor.url, {
+      const targetUrl = /^https?:\/\//i.test(monitor.url)
+        ? monitor.url
+        : `https://${monitor.url}`;
+
+      const response = await axios.get(targetUrl, {
         timeout: 10000,
         validateStatus: () => true,
       });

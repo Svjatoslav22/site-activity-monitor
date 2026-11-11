@@ -72,7 +72,7 @@ export class MonitorsController {
       throw new NotFoundException('Монітор не знайдено');
     }
 
-    const result = await this.schedulerService.runCheckForMonitor(id);
+    const result = await this.schedulerService.runCheckForMonitor(id, true);
     const stats = await this.checksService.getStats(id);
 
     return {

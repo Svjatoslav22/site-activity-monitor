@@ -79,6 +79,7 @@ function formatTime(value?: string) {
   return parsed.toLocaleTimeString('uk-UA', {
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
   });
 }
 
@@ -243,9 +244,13 @@ function SiteCard({
           <RefreshCw
             size={13}
             strokeWidth={2.5}
-            className="transition-transform duration-500 group-hover:rotate-180"
+            className={
+              isRefreshing
+                ? 'animate-spin text-emerald-600'
+                : 'transition-transform duration-500 group-hover:rotate-180'
+            }
           />
-          Оновити
+          {isRefreshing ? 'Оновлення...' : 'Оновити'}
         </button>
       </div>
     </div>
@@ -276,6 +281,7 @@ export default function App() {
   const [sites, setSites] = useState<Site[]>([]);
   const [isLoadingSites, setIsLoadingSites] = useState(false);
   const [refreshingId, setRefreshingId] = useState<string | null>(null);
+  const [isRefreshingAll, setIsRefreshingAll] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
   const [toast, setToast] = useState('');
@@ -608,9 +614,32 @@ export default function App() {
       await loadSites();
       showNotification('Сайт оновлено');
     } catch (error) {
+      console.error('Помилка оновлення сайту:', error);
       showNotification('Не вдалося оновити сайт');
     } finally {
       setRefreshingId(null);
+    }
+  };
+
+  const handleRefreshAll = async () => {
+    if (isRefreshingAll) return;
+    try {
+      setIsRefreshingAll(true);
+      showNotification('Оновлення всіх сервісів...');
+      if (sites.length > 0) {
+        await Promise.allSettled(
+          sites.map((site) =>
+            apiFetch(`/api/monitors/${site.id}/check`, { method: 'POST' }),
+          ),
+        );
+      }
+      await loadSites();
+      showNotification('Усі сайти оновлено');
+    } catch (error) {
+      console.error('Помилка оновлення всіх сайтів:', error);
+      showNotification('Не вдалося оновити всі сайти');
+    } finally {
+      setIsRefreshingAll(false);
     }
   };
 
@@ -1068,10 +1097,16 @@ export default function App() {
             <div className="hidden h-6 w-px bg-slate-200 md:block" />
 
             <button
-              onClick={() => showNotification('Оновлення всіх сервісів...')}
-              className="hidden text-slate-400 transition-colors hover:text-indigo-600 active:scale-95 sm:block"
+              onClick={handleRefreshAll}
+              disabled={isRefreshingAll}
+              title="Оновити всі сайти"
+              className="hidden text-slate-400 transition-colors hover:text-indigo-600 active:scale-95 disabled:opacity-50 sm:block"
             >
-              <RefreshCw size={18} strokeWidth={2} />
+              <RefreshCw
+                size={18}
+                strokeWidth={2}
+                className={isRefreshingAll ? 'animate-spin text-indigo-600' : ''}
+              />
             </button>
 
             <div className="relative ml-2">
@@ -1275,7 +1310,7 @@ export default function App() {
                 onRefresh={handleRefresh}
                 onEdit={openEditSite}
                 onDelete={openDeleteSite}
-                isRefreshing={refreshingId === site.id}
+                isRefreshing={refreshingId === site.id || isRefreshingAll}
               />
             ))}
           </div>
